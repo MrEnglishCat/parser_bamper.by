@@ -221,36 +221,46 @@ class ParserBamberBy:
         self.write_to_json(self.DEFAULT_URL_PATH, 'ERRORS.json', self.ERRORS)
         self.write_to_json(self.DEFAULT_URL_PATH, 'ERRORS_URLS.txt', self.ERRORS_URLS, )
 
+    def get_tasks_car_goods(self):
+        self.TASKS.clear()
+        print(f'[INFO] Формирование задач для начала сбора url товаров...')
 
-# TODO: проверить как обрабатывать пагинацию
-parser = ParserBamberBy()
+    def run_car_item_tasks(self):
+        if not type(self).ALL_GOODS_URLS:
+            type(self).ALL_GOODS_URLS = tuple(self.read_file('data/urls/urls_with_car_models.txt'))
+        asyncio.run(
+            self.get_tasks_car_goods()
+        )
+if __name__ == '__main__':
+    # TODO: проверить как обрабатывать пагинацию
+    parser = ParserBamberBy()
 
-# print(f"{'='*50}\nНачат сбор улов брендов:\n{'='*50}")
-# start = time.monotonic()
-# parser.run_car_brands_tasks()
-# end = time.monotonic()
-# print(f"Время работы скрипта получение списка брендов({len(parser.URLS_WITH_CAR_BRAND)}): {end - start} секунд. \n{'='*50}")
+    # print(f"{'='*50}\nНачат сбор урлов брендов:\n{'='*50}")
+    # start = time.monotonic()
+    # parser.run_car_brands_tasks()
+    # end = time.monotonic()
+    # print(f"Время работы скрипта получение списка брендов({len(parser.URLS_WITH_CAR_BRAND)}): {end - start} секунд. \n{'='*50}")
 
-print()
+    print()
 
-# print(f"{'=' * 50}\nНачат сбор урлов моделей:\n{'=' * 50}")
-# start = time.monotonic()
-# parser.run_car_model_tasks()
-# end = time.monotonic()
-# print(
-#     f"Время работы скрипта получение списка моделей({len(parser.URLS_WITH_CAR_MODEL)}): {end - start} секунд. \n{'=' * 50}")
+    # print(f"{'=' * 50}\nНачат сбор урлов моделей:\n{'=' * 50}")
+    # start = time.monotonic()
+    # parser.run_car_model_tasks()
+    # end = time.monotonic()
+    # print(
+    #     f"Время работы скрипта получение списка моделей({len(parser.URLS_WITH_CAR_MODEL)}): {end - start} секунд. \n{'=' * 50}")
 
-print()
+    print()
 
-start = time.monotonic()
-parser.run_car_model_tasks()
-end = time.monotonic()
-# with open('import.csv', 'r', encoding='cp1251') as f:
-#     reader = csv.DictReader(f)
-#
-#     with open('import_utf.csv', 'w', newline='', encoding='utf-8') as f:
-#         writer = csv.DictWriter(f, fieldnames=reader.fieldnames)
-#         writer.writeheader()
-#         for row in reader:
-#             writer.writerow(row)
-# pprint(reader.fieldnames)
+    start = time.monotonic()
+    parser.run_car_item_tasks()
+    end = time.monotonic()
+    # with open('import.csv', 'r', encoding='cp1251') as f:
+    #     reader = csv.DictReader(f)
+    #
+    #     with open('import_utf.csv', 'w', newline='', encoding='utf-8') as f:
+    #         writer = csv.DictWriter(f, fieldnames=reader.fieldnames)
+    #         writer.writeheader()
+    #         for row in reader:
+    #             writer.writerow(row)
+    # pprint(reader.fieldnames)
