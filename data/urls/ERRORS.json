@@ -1,0 +1,622 @@
+﻿{
+    "get_list_car_models_url": {
+        "1494. https://www.bamper.by/catalog/zapchasti/aktivator-privod-zamka-dveri/ssangyong/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "3492. https://www.bamper.by/catalog/zapchasti/datchik-kruiz-kontrolya/porsche/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "7609. https://www.bamper.by/catalog/zapchasti/kpp-mekhanicheskaya-mkpp/setra/": [
+            10054,
+            "Удаленный хост принудительно разорвал существующее подключение",
+            null,
+            10054,
+            null
+        ],
+        "8550. https://www.bamper.by/catalog/zapchasti/trubka-okhlazhdayushchey-zhidkosti-metallicheskaya/lexus/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "13468. https://www.bamper.by/catalog/zapchasti/porshen/audi/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "18192. https://www.bamper.by/catalog/zapchasti/mekhanizm-prochie/saab/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "18418. https://www.bamper.by/catalog/zapchasti/zamok-podushki-bezopasnosti/audi/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "24238. https://www.bamper.by/catalog/zapchasti/blok-upravleniya-toplivnym-nasosom/lincoln/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "44941. https://www.bamper.by/catalog/zapchasti/tros-otkryvaniya-lyuchka-toplivnogo-baka/volkswagen/": [
+            "'NoneType' object has no attribute 'find_all'"
+        ],
+        "46837. https://www.bamper.by/catalog/zapchasti/balka-podveski-zadnyaya/renault/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "46822. https://www.bamper.by/catalog/zapchasti/balka-podveski-zadnyaya/man/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "46968. https://www.bamper.by/catalog/zapchasti/ruchka-naruzhnaya-zadnyaya-levaya/lada/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "61124. https://www.bamper.by/catalog/zapchasti/datchik-urovnya-topliva/hondamoto/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "61106. https://www.bamper.by/catalog/zapchasti/datchik-urovnya-topliva/cadillac/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "61082. https://www.bamper.by/catalog/zapchasti/antenna-signalizatsii/man/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "61137. https://www.bamper.by/catalog/zapchasti/datchik-urovnya-topliva/ldv/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "61080. https://www.bamper.by/catalog/zapchasti/antenna-signalizatsii/landrover/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "61125. https://www.bamper.by/catalog/zapchasti/datchik-urovnya-topliva/hyundai/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "61234. https://www.bamper.by/catalog/zapchasti/zashchita-kozhukh-remnya-grm/ssangyong/": [
+            "Response payload is not completed: <TransferEncodingError: 400, message='Not enough data for satisfy transfer length header.'>. ConnectionResetError(10054, 'Удаленный хост принудительно разорвал существующее подключение', None, 10054, None)"
+        ],
+        "65744. https://www.bamper.by/catalog/zapchasti/steklo-lobovoe/lixiang/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "64965. https://www.bamper.by/catalog/zapchasti/steklo-kuzovnoe-bokovoe-pravoe/man/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "64947. https://www.bamper.by/catalog/zapchasti/steklo-kuzovnoe-bokovoe-pravoe/gmc/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "64951. https://www.bamper.by/catalog/zapchasti/steklo-kuzovnoe-bokovoe-pravoe/hummer/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "64970. https://www.bamper.by/catalog/zapchasti/steklo-kuzovnoe-bokovoe-pravoe/mitsubishi/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65732. https://www.bamper.by/catalog/zapchasti/steklo-lobovoe/jaguar/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "64939. https://www.bamper.by/catalog/zapchasti/steklo-kuzovnoe-bokovoe-pravoe/dacia/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65743. https://www.bamper.by/catalog/zapchasti/steklo-lobovoe/lincoln/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "64944. https://www.bamper.by/catalog/zapchasti/steklo-kuzovnoe-bokovoe-pravoe/fiat/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "64936. https://www.bamper.by/catalog/zapchasti/steklo-kuzovnoe-bokovoe-pravoe/chevrolet/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65025. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/daewoo/": [
+            10054,
+            "Удаленный хост принудительно разорвал существующее подключение",
+            null,
+            10054,
+            null
+        ],
+        "64864. https://www.bamper.by/catalog/zapchasti/interkuler/buick/": [
+            "Response payload is not completed: <TransferEncodingError: 400, message='Not enough data for satisfy transfer length header.'>. ConnectionResetError(10054, 'Удаленный хост принудительно разорвал существующее подключение', None, 10054, None)"
+        ],
+        "65027. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/daihatsu/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65015. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/audi/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65016. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/bentley/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "64945. https://www.bamper.by/catalog/zapchasti/steklo-kuzovnoe-bokovoe-pravoe/ford/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "64999. https://www.bamper.by/catalog/zapchasti/elektroprivod-dveri-peredney-pravoy/audi/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "64995. https://www.bamper.by/catalog/zapchasti/steklo-kuzovnoe-bokovoe-pravoe/зил/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "64985. https://www.bamper.by/catalog/zapchasti/steklo-kuzovnoe-bokovoe-pravoe/smart/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65117. https://www.bamper.by/catalog/zapchasti/sharovaya-opora/buick/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65121. https://www.bamper.by/catalog/zapchasti/sharovaya-opora/chery/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65106. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-fary-protivotumannoy-levoy/renault/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65101. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-fary-protivotumannoy-levoy/mini/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65098. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-fary-protivotumannoy-levoy/lexus/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65085. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-fary-protivotumannoy-levoy/dodge/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65092. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-fary-protivotumannoy-levoy/iveco/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65076. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/volvo/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65074. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/toyota/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65053. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/mazda/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65086. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-fary-protivotumannoy-levoy/exeed/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65038. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/irankhodro/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65052. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/maserati/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65081. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-fary-protivotumannoy-levoy/chery/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65036. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/hyundai/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65064. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/saab/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65073. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/tesla/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65116. https://www.bamper.by/catalog/zapchasti/sharovaya-opora/brp/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65071. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/suzuki/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65056. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/mitsubishi/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65059. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/peugeot/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65043. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/kia/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65049. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/lifan/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65113. https://www.bamper.by/catalog/zapchasti/sharovaya-opora/audi/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65061. https://www.bamper.by/catalog/zapchasti/stabilizator-podveski-poperechnoy-ustoychivosti/porsche/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65120. https://www.bamper.by/catalog/zapchasti/sharovaya-opora/changan/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65115. https://www.bamper.by/catalog/zapchasti/sharovaya-opora/bmw/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65109. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-fary-protivotumannoy-levoy/toyota/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65096. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-fary-protivotumannoy-levoy/lada/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65213. https://www.bamper.by/catalog/zapchasti/datchik-kholostogo-khoda/lincoln/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65214. https://www.bamper.by/catalog/zapchasti/datchik-kholostogo-khoda/mazda/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65218. https://www.bamper.by/catalog/zapchasti/datchik-kholostogo-khoda/opel/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65091. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-fary-protivotumannoy-levoy/infiniti/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65202. https://www.bamper.by/catalog/zapchasti/datchik-kholostogo-khoda/geely/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65198. https://www.bamper.by/catalog/zapchasti/datchik-kholostogo-khoda/daewoo/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65181. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-torsiona-kabiny/mercedes/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65180. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-torsiona-kabiny/man/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65174. https://www.bamper.by/catalog/zapchasti/sharovaya-opora/zotye/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65186. https://www.bamper.by/catalog/zapchasti/kronshteyn-krepleniya-torsiona-kabiny/камаз/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65172. https://www.bamper.by/catalog/zapchasti/sharovaya-opora/volkswagen/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65165. https://www.bamper.by/catalog/zapchasti/sharovaya-opora/seat/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "65149. https://www.bamper.by/catalog/zapchasti/sharovaya-opora/lincoln/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "69741. https://www.bamper.by/catalog/zapchasti/kryuchok-dlya-odezhdy/audi/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "69034. https://www.bamper.by/catalog/zapchasti/nasos-toplivnyy-avtonomnogo-otopitelya/honda/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "69082. https://www.bamper.by/catalog/zapchasti/zaglushka-reshetka-v-bamper-zadniy/chery/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "69044. https://www.bamper.by/catalog/zapchasti/nasos-toplivnyy-avtonomnogo-otopitelya/mini/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "69122. https://www.bamper.by/catalog/zapchasti/zaglushka-reshetka-v-bamper-zadniy/skoda/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "69105. https://www.bamper.by/catalog/zapchasti/zaglushka-reshetka-v-bamper-zadniy/lancia/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "69120. https://www.bamper.by/catalog/zapchasti/zaglushka-reshetka-v-bamper-zadniy/saab/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "69090. https://www.bamper.by/catalog/zapchasti/zaglushka-reshetka-v-bamper-zadniy/fiat/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "69075. https://www.bamper.by/catalog/zapchasti/vtulka-napravlyayushchaya-vyzhimnogo-podshipnika/москвич/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ],
+        "69137. https://www.bamper.by/catalog/zapchasti/blok-klapanov-gidropodveski/peugeot/": [
+            22,
+            "Указанное сетевое имя более недоступно",
+            null,
+            64,
+            null
+        ]
+    }
+}

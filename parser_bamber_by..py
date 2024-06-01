@@ -147,6 +147,7 @@ class ParserBamberBy:
             print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         else:
             print(f"\t[ERROR id {url_index}] ОШИБКА! ")
+
     # def get_data_from_page(self, url):
     #     result = {}
     #     response = requests.get(url, headers=self.HEADERS)
@@ -183,7 +184,7 @@ class ParserBamberBy:
     async def get_tasks_car_brands(self):
         self.GOODS_ALL_URL_LIST = self.get_main_urls(self.BASE_URLS_CATEGORIES)
         # self.write_to_file(self.DEFAULT_URL_PATH, 'main_url.txt', self.GOODS_ALL_URL_LIST)  # файл для теста(проверка урлов брендов)
-        async with aiohttp.ClientSession(trust_env=True) as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
             for url_index, url in enumerate(self.GOODS_ALL_URL_LIST, 1):
                 self.TASKS.append(
                     asyncio.create_task(self.get_list_car_brands_url(session, url, url_index))
@@ -224,6 +225,13 @@ class ParserBamberBy:
     def get_tasks_car_goods(self):
         self.TASKS.clear()
         print(f'[INFO] Формирование задач для начала сбора url товаров...')
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
+            for url in self.URLS_WITH_CAR_MODEL:
+                self.TASKS.append(
+                    asyncio.create_task(
+                        self.
+                    )
+                )
 
     def run_car_item_tasks(self):
         if not type(self).ALL_GOODS_URLS:
@@ -231,6 +239,8 @@ class ParserBamberBy:
         asyncio.run(
             self.get_tasks_car_goods()
         )
+
+
 if __name__ == '__main__':
     # TODO: проверить как обрабатывать пагинацию
     parser = ParserBamberBy()
