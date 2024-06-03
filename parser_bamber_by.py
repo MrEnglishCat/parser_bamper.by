@@ -315,7 +315,7 @@ class ParserBamberBy:
             chunks = self.get_chunks(self.URLS_WITH_CAR_MODEL, 100)
         for chunk_num, chunk_urls in enumerate(chunks):
             print('-' * 100)
-            print(f'{"\t" * 10}Обработка чанка #{chunk_num}')
+            print(f'{"\t" * 10} Chunk #{chunk_num}')
             print('-' * 100)
             asyncio.run(
                 self.get_tasks_car_goods(chunk_urls)
