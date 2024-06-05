@@ -363,9 +363,10 @@ class ParserBamberBy:
         city = soup.find('div', class_='panel sidebar-panel panel-contact-seller hidden-xs hidden-sm').find('div',
                                                                                                             class_='seller-info').find_all(
             'p')[0].text.split()[-1].strip()
+        url_name = ''
         # url_name = (url.get('href') for url in soup.find('div', id='js-breadcrumbs').find_all('a')[-2:])
-        url_name = soup.find('div', id='col-sm-9 automobile-left-col')
-        print('\t\t\t\t\t', url_name)
+        # url_name = soup.find('div', id='col-sm-9 automobile-left-col')
+        # print('\t\t\t\t\t', url_name)
         if (a := soup.find('div', style="font-size: 17px;")):
             engine_v = a.text.split(',')[0].strip()
         else:
@@ -395,7 +396,7 @@ class ParserBamberBy:
                 self.DATA_FOR_CSV.append(
                     self.get_data(soup, url)
                 )
-            print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
+                print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
             self.ERRORS.setdefault('get_data_from_page', {}).setdefault(f"{url_index}. {url}", tuple(e.args))
             self.ERRORS_URLS.add(url)
