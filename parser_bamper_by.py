@@ -511,12 +511,3 @@ if __name__ == '__main__':
     parser = ParserBamberBy()
     parser.run_all_tasks()
 
-    # with open('import.csv', 'r', encoding='cp1251') as f:
-    #     reader = csv.DictReader(f)
-    #
-    #     with open('import_utf.csv', 'w', newline='', encoding='utf-8') as f:
-    #         writer = csv.DictWriter(f, fieldnames=reader.fieldnames)
-    #         writer.writeheader()
-    #         for row in reader:
-    #             writer.writerow(row)
-    # pprint(reader.fieldnames)
