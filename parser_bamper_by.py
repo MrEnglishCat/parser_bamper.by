@@ -14,7 +14,7 @@ from fake_useragent import UserAgent
 from datetime import datetime
 
 
-# sys.stdin.reconfigure(encoding='utf-8')
+# sys.stdin.reconfigure(encoding='utf-8')  # если в терминале проблемы с кодировкой, то раскомитить 17 и 18 строчки, либо изменить кодировку в терминале
 # sys.stdout.reconfigure(encoding='utf-8')
 
 
@@ -25,7 +25,9 @@ class ParserBamberBy:
     DEFAULT_URL_PATH = "data/urls"
     DEFAULT_URL_PATH_ERRORS = "data/urls/errors"
     DEFAULT_URL_PATH_CONTINUES = "data/urls/continues"
+
     RESULT_CSV = []
+
     LINKS = []
     HEADERS = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -35,7 +37,19 @@ class ParserBamberBy:
     URLS_WITH_CAR_BRAND = []
     URLS_WITH_CAR_MODEL = []
     ALL_GOODS_URLS = []
+
     DATA_FOR_CSV = []
+    FIELDNAME = (
+        'Группа',
+        'Раздел',
+        'Артикул',
+        'Название',
+        'Примечания',
+        'Номер запчасти',
+        'Цена',
+        'Валюта',
+    )
+
     ERRORS = {}
     ERRORS_URLS = set()
     PREVIOUS_ACTIVE_PAGE = ''
@@ -144,6 +158,9 @@ class ParserBamberBy:
     async def get_delay(self, start, stop):
         await asyncio.sleep(randrange(start, stop))
 
+    def get_chunks(self, obj, shift):
+        return (obj[i:i + shift] for i in range(0, len(obj), shift))
+
     async def _parsing_urls_from_soup(self, session, url, url_index):
         print(f"[INFO id {url_index}] Сбор данных по {url}")
         async with session.get(url, headers=self._get_header()) as response:
@@ -205,11 +222,11 @@ class ParserBamberBy:
         self.ERRORS.clear()
         self.ERRORS_URLS.clear()
 
-    async def get_tasks_car_models(self):
+    async def get_tasks_car_models(self, chunk):
         self.TASKS.clear()
         print(f'[INFO] Формирование задач для начала сбора url моделей...')
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
-            for url_index, url in enumerate(self.URLS_WITH_CAR_BRAND):
+            for url_index, url in enumerate(chunk):
                 self.TASKS.append(
                     asyncio.create_task(
                         self.get_list_car_models_url(session, url, url_index)
@@ -221,18 +238,19 @@ class ParserBamberBy:
     def run_car_model_tasks(self):
         if not type(self).URLS_WITH_CAR_BRAND:
             type(self).URLS_WITH_CAR_BRAND = tuple(self.read_file('data/urls/urls_with_car_brands.txt'))
-        asyncio.run(
-            self.get_tasks_car_models()
-        )
-        self.write_to_file(self.DEFAULT_URL_PATH, 'urls_with_car_models.txt', self.URLS_WITH_CAR_MODEL, workmode='a')
-        self.write_to_json(self.DEFAULT_URL_PATH, 'ERRORS_car_models.json', self.ERRORS)
-        self.write_to_file(self.DEFAULT_URL_PATH_ERRORS, 'ERRORS_URLS_car_models.txt', self.ERRORS_URLS, workmode='w')
+            chunks = self.get_chunks(self.URLS_WITH_CAR_BRAND, 100)
+        for chunk in chunks:
+            asyncio.run(
+                self.get_tasks_car_models(chunk)
+            )
+            self.write_to_file(self.DEFAULT_URL_PATH, 'urls_with_car_models.txt', self.URLS_WITH_CAR_MODEL,
+                               workmode='a')
+            self.write_to_json(self.DEFAULT_URL_PATH, 'ERRORS_car_models.json', self.ERRORS, isadd=True)
+            self.write_to_file(self.DEFAULT_URL_PATH_ERRORS, 'ERRORS_URLS_car_models.txt', self.ERRORS_URLS,
+                               workmode='a')
 
         self.ERRORS.clear()
         self.ERRORS_URLS.clear()
-
-    def get_chunks(self, obj, shift):
-        return (obj[i:i + shift] for i in range(0, len(obj), shift))
 
     async def get_all_goods_from_page(self, session, url, url_index):
         await self.get_delay(1, 3)
@@ -336,12 +354,15 @@ class ParserBamberBy:
                     pass
             if not item_number and 'Номер запчасти' in item.find('div', class_='media-body').text:
                 try:
-                    item_number = item.find('div', class_='media-body').find_all('span', class_='media-heading')[-1].text.strip()
+                    item_number = item.find('div', class_='media-body').find_all('span', class_='media-heading')[
+                        -1].text.strip()
                     continue
                 except:
                     pass
 
-        city = soup.find('div', class_='panel sidebar-panel panel-contact-seller hidden-xs hidden-sm').find('div', class_='seller-info').find_all('p')[0].text.split()[-1].strip()
+        city = soup.find('div', class_='panel sidebar-panel panel-contact-seller hidden-xs hidden-sm').find('div',
+                                                                                                            class_='seller-info').find_all(
+            'p')[0].text.split()[-1].strip()
         # url_name = (url.get('href') for url in soup.find('div', id='js-breadcrumbs').find_all('a')[-2:])
         url_name = soup.find('div', id='col-sm-9 automobile-left-col')
         print('\t\t\t\t\t', url_name)
@@ -360,7 +381,7 @@ class ParserBamberBy:
                 'item_number': item_number,
                 'city': city,
                 'engine_v': engine_v,
-                'url_name':' - '.join(url_name)
+                'url_name': ' - '.join(url_name)
             }
         )
         return result
@@ -408,7 +429,8 @@ class ParserBamberBy:
             self.write_to_json(self.DEFAULT_URL_PATH_ERRORS, 'ERRORS_data_items.json', self.ERRORS, isadd=True)
             self.write_to_file(self.DEFAULT_URL_PATH_ERRORS, 'ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
                                workmode='w')
-            self.write_to_json(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt', self.ALL_GOODS_URLS[chunk_num*100:])
+            self.write_to_json(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
+                               self.ALL_GOODS_URLS[chunk_num * 100:])
             self.write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV)
             break
         type(self).URL_COUNTER = 0
