@@ -107,6 +107,20 @@ class ParserBamberBy:
             print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
 
     @staticmethod
+    def write_to_csv(path, filename=None, data=None):
+        __class__.check_dirs(path)
+
+        with open(f"{path}/{filename}", 'w', encoding='utf-8-sig') as f_json:
+            if filename and data:
+
+                with open(f"{path}/{filename}", mode='w', encoding='utf-8-sig') as f_csv:
+                    writer = csv.DictWriter(f_csv, fieldnames=data)
+                    writer.writeheader()
+                    writer.writerows(data)
+            else:
+                print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
+
+    @staticmethod
     def read_file(path):
         __class__.check_dirs(path, check_file=True)
 
