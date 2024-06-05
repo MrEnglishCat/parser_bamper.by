@@ -232,7 +232,7 @@ class ParserBamberBy:
             print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
             data = ''
-            self.ERRORS.setdefault('get_list_car_brands_url', {}).setdefault(f"{url_index}. {url}", tuple(e.args))
+            self.ERRORS.setdefault('get_list_car_brands_url', {}).setdefault(f"{url}", tuple(e.args))
             self.ERRORS_URLS.add(url)
             print(f"\t[ERROR id {url_index}] ОШИБКА! ")
         # if data:
@@ -281,14 +281,18 @@ class ParserBamberBy:
     async def get_all_goods_from_page(self, session, url, url_index, group, chapter):
         await self.get_delay(1, 2)
         self.URL_COUNTER += 1
+        PREVIOUS_ACTIVE_PAGE = ''
         print(f"[{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
         start = True
         while start:
+            await self.get_delay(1, 2)
             try:
                 async with session.get(url, headers=self._get_header()) as response:
                     soup = self.get_soup(await response.read())
-                    if self.PREVIOUS_ACTIVE_PAGE == self.get_active_page(soup):
+                    if PREVIOUS_ACTIVE_PAGE == self.get_active_page(soup):
                         start = False
+                        # PREVIOUS_ACTIVE_PAGE = ''
+                        print(f"ID {url_index}", PREVIOUS_ACTIVE_PAGE, url)
                         continue
                     for row_index, row in enumerate(
                             soup.find('div', class_='list-wrapper').find_all('div', class_='add-image'), 1):
@@ -300,25 +304,25 @@ class ParserBamberBy:
                     print('\t\t\t\t', paginagions)
                     if paginagions != '1 страница':
                         url = self.BASE_URL + paginagions
-                        self.PREVIOUS_ACTIVE_PAGE = self.get_active_page(soup)
+                        PREVIOUS_ACTIVE_PAGE = self.get_active_page(soup)
                     else:
                         start = False
+                        # PREVIOUS_ACTIVE_PAGE = ''
                     print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
 
             except Exception as e:
-                self.ERRORS.setdefault('get_all_goods_from_page', {}).setdefault(f"{url_index}. {url}", tuple(e.args))
+                self.ERRORS.setdefault('get_all_goods_from_page', {}).setdefault(f"{url}", tuple(e.args))
                 self.ERRORS_URLS.add(url)
                 print(f"\t[ERROR id {url_index}] ОШИБКА! ")
-                self.PREVIOUS_ACTIVE_PAGE = ''
+                # PREVIOUS_ACTIVE_PAGE = ''
 
-        self.PREVIOUS_ACTIVE_PAGE = ''
+
 
 
     async def get_tasks_car_goods(self, chunk, group, chapter):
         self.TASKS.clear()
         print(f'[INFO] Формирование задач для начала сбора url товаров...')
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
-            # for url_index, url in enumerate(self.URLS_WITH_CAR_MODEL, 1):
             for url_index, url in enumerate(chunk, 1):
                 self.TASKS.append(
                     asyncio.create_task(
@@ -442,7 +446,7 @@ class ParserBamberBy:
                 self.DATA_FOR_CSV.append(
                     self.get_data(soup, url)
                 )
-                print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
+                print(f"\t[{self.URL_COUNTER}][SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
             self.ERRORS.setdefault('get_data_from_page', {}).setdefault(f"{url_index}. {url}", tuple(e.args))
             self.ERRORS_URLS.add(url)
