@@ -1,6 +1,5 @@
 import asyncio
 import csv
-import datetime
 import json
 import os
 import sys
@@ -20,13 +19,13 @@ from datetime import datetime
 
 class ParserBamberBy:
     BASE_URL = 'https://www.bamper.by'
-    BASE_URLS_CATEGORIES = 'https://bamper.by/catalog/zapchasti/'
+    # BASE_URLS_CATEGORIES = 'https://bamper.by/catalog/zapchasti/'
+    BASE_URLS_CATEGORIES = 'https://bamper.by/catalog/modeli/'
     # PARSER_URL = 'https://bamper.by/zapchast_elektrogidrousilitel-rulya/8792-1084241/'
     DEFAULT_URL_PATH = "data/urls"
-    DEFAULT_URL_PATH_ERRORS = "data/urls/errors"
-    DEFAULT_URL_PATH_CONTINUES = "data/urls/continues"
+    DEFAULT_URL_PATH_ERRORS = f"data/urls/errors"
+    DEFAULT_URL_PATH_CONTINUES = f"data/urls/continues"
 
-    RESULT_CSV = []
 
     LINKS = []
     HEADERS = {
@@ -39,15 +38,18 @@ class ParserBamberBy:
     ALL_GOODS_URLS = []
 
     DATA_FOR_CSV = []
-    FIELDNAME = (
+    RESULT_CSV = []
+    CSV_FIELDNAMES = (
         'Группа',
         'Раздел',
         'Артикул',
         'Название',
-        'Примечания',
+        'Примечание',
         'Номер запчасти',
         'Цена',
         'Валюта',
+        'Город',
+        'Объем двигателя',
     )
 
     ERRORS = {}
@@ -83,7 +85,8 @@ class ParserBamberBy:
                 old_data = json.load(open(f"{path}/{filename}", 'r', encoding='utf-8-sig'))
             with open(f"{path}/{filename}", 'w', encoding='utf-8-sig') as f_json:
                 if isadd and ischeck_file:
-                    old_data.update(
+
+                    old_data.extend(
                         data
                     )
                     json.dump(old_data, f_json, indent=4, ensure_ascii=False)
@@ -93,7 +96,7 @@ class ParserBamberBy:
             print(f'[INFO] File "{path}/{filename}" is create\n')
 
     @staticmethod
-    def write_to_file(path, filename=None, data=None, workmode='r', istxt=False):
+    def write_to_file(path, filename=None, data=None, workmode='w'):
         __class__.check_dirs(path)
 
         if filename and data:
@@ -113,8 +116,8 @@ class ParserBamberBy:
         with open(f"{path}/{filename}", 'w', encoding='utf-8-sig') as f_json:
             if filename and data:
 
-                with open(f"{path}/{filename}", mode='w', encoding='utf-8-sig') as f_csv:
-                    writer = csv.DictWriter(f_csv, fieldnames=data)
+                with open(f"{path}/{filename}", mode='w', encoding='utf-8-sig', newline='') as f_csv:
+                    writer = csv.DictWriter(f_csv, fieldnames=__class__.CSV_FIELDNAMES, delimiter=';')
                     writer.writeheader()
                     writer.writerows(data)
             else:
@@ -137,6 +140,13 @@ class ParserBamberBy:
             return pagination_bar.get('href')
         else:
             return '1 страница'
+
+    @staticmethod
+    def get_datetime(split=False):
+        result = datetime.now().strftime("%d.%m.%Y_%H.%M.%S")
+        if split:
+            return result.split('_')[0]
+        return result
 
     def get_main_urls(self, url):
         """
@@ -229,9 +239,9 @@ class ParserBamberBy:
         asyncio.run(
             self.get_tasks_car_brands()
         )
-        self.write_to_file(self.DEFAULT_URL_PATH, 'urls_with_car_brands.txt', self.URLS_WITH_CAR_BRAND, workmode='a')
-        self.write_to_json(self.DEFAULT_URL_PATH, 'ERRORS_car_brands.json', self.ERRORS)
-        self.write_to_file(self.DEFAULT_URL_PATH_ERRORS, 'ERRORS_URLS_car_brands.txt', self.ERRORS_URLS, workmode='w')
+        self.write_to_file(self.DEFAULT_URL_PATH, 'urls_with_car_brands.txt', self.URLS_WITH_CAR_BRAND, workmode='w')
+        self.write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_car_brands.json', self.ERRORS)
+        self.write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_URLS_car_brands.txt', self.ERRORS_URLS, workmode='w')
 
         self.ERRORS.clear()
         self.ERRORS_URLS.clear()
@@ -259,8 +269,8 @@ class ParserBamberBy:
             )
             self.write_to_file(self.DEFAULT_URL_PATH, 'urls_with_car_models.txt', self.URLS_WITH_CAR_MODEL,
                                workmode='a')
-            self.write_to_json(self.DEFAULT_URL_PATH, 'ERRORS_car_models.json', self.ERRORS, isadd=True)
-            self.write_to_file(self.DEFAULT_URL_PATH_ERRORS, 'ERRORS_URLS_car_models.txt', self.ERRORS_URLS,
+            self.write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_car_models.json', self.ERRORS, isadd=True)
+            self.write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_URLS_car_models.txt', self.ERRORS_URLS,
                                workmode='a')
 
         self.ERRORS.clear()
@@ -327,10 +337,10 @@ class ParserBamberBy:
                 self.get_tasks_car_goods(chunk_urls)
             )
             self.write_to_file(self.DEFAULT_URL_PATH, 'all_goods_urls.txt', self.ALL_GOODS_URLS, workmode='a')
-            self.write_to_json(self.DEFAULT_URL_PATH, 'ERRORS_goods_urls.json', self.ERRORS, isadd=True)
-            self.write_to_file(self.DEFAULT_URL_PATH_ERRORS, 'ERRORS_URLS_goods_urls.txt', self.ERRORS_URLS,
-                               workmode='w')
-            self.write_to_json(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.json', self.ALL_GOODS_URLS)
+            self.write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_goods_urls.json', self.ERRORS, isadd=True)
+            self.write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_URLS_goods_urls.txt', self.ERRORS_URLS,
+                               workmode='a')
+            self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'urls_with_car_models.txt', self.URLS_WITH_CAR_MODEL[(chunk_num+1) * 100:], workmode='a')
         type(self).URL_COUNTER = 0
 
         self.ERRORS.clear()
@@ -377,26 +387,32 @@ class ParserBamberBy:
         city = soup.find('div', class_='panel sidebar-panel panel-contact-seller hidden-xs hidden-sm').find('div',
                                                                                                             class_='seller-info').find_all(
             'p')[0].text.split()[-1].strip()
-        url_name = ''
-        # url_name = (url.get('href') for url in soup.find('div', id='js-breadcrumbs').find_all('a')[-2:])
-        # url_name = soup.find('div', id='col-sm-9 automobile-left-col')
-        # print('\t\t\t\t\t', url_name)
+        chapter = ''
+        group = soup.find('h1', class_='auto-heading onestring').find('span').find('b').text.strip()
+        # group = (url.get('href') for url in soup.find('div', id='js-breadcrumbs').find_all('a')[-2:])
+        # group = soup.find('div', id='col-sm-9 automobile-left-col')
+        # print('\t\t\t\t\t', group)
+        engine_v = 'не указан'
         if (a := soup.find('div', style="font-size: 17px;")):
-            engine_v = a.text.split(',')[0].strip()
-        else:
-            engine_v = ''
+            for r in a.text.split(','):
+                r = r.strip()
+                if ' л' in r:
+                    engine_v = r
+                    break
+
         result.update(
             {
-                'url': url,
-                'goods_name': item_name,
-                'price': price,
-                'units': units,
-                'item_comment': item_comment,
-                'vendor_code': vendor_code,
-                'item_number': item_number,
-                'city': city,
-                'engine_v': engine_v,
-                'url_name': ' - '.join(url_name)
+                # 'url': url,
+                'Раздел': chapter,
+                'Группа': group,
+                'Артикул': vendor_code,
+                'Название': item_name,
+                'Примечание': item_comment,
+                'Номер запчасти': item_number,
+                'Цена': price,
+                'Валюта': units,
+                'Город': city,
+                'Объем двигателя': engine_v,
             }
         )
         return result
@@ -407,6 +423,8 @@ class ParserBamberBy:
         try:
             async with session.get(url, headers=self._get_header()) as response:
                 soup = self.get_soup(await response.read())
+                if (a:=soup.find('div', class_='row block404')):
+                    raise ValueError(f'Error 404 - {a.text}')
                 self.DATA_FOR_CSV.append(
                     self.get_data(soup, url)
                 )
@@ -431,7 +449,7 @@ class ParserBamberBy:
 
     def run_get_data_from_page_tasks(self):
         if not type(self).ALL_GOODS_URLS:
-            type(self).ALL_GOODS_URLS = tuple(self.read_file('data/urls/all_goods_urls.txt'))
+            type(self).ALL_GOODS_URLS = tuple(self.read_file('all_goods_urls.txt'))
             chunks = self.get_chunks(self.ALL_GOODS_URLS, 100)
         for chunk_num, chunk_urls in enumerate(chunks):
             print('-' * 100)
@@ -440,23 +458,24 @@ class ParserBamberBy:
             asyncio.run(
                 self.get_tasks_car_items(chunk_urls)
             )
-            # self.write_to_file(self.DEFAULT_URL_PATH, 'all_goods_urls.txt', self.ALL_GOODS_URLS, workmode='a')
-            self.write_to_json(self.DEFAULT_URL_PATH_ERRORS, 'ERRORS_data_items.json', self.ERRORS, isadd=True)
-            self.write_to_file(self.DEFAULT_URL_PATH_ERRORS, 'ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
-                               workmode='w')
-            self.write_to_json(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
-                               self.ALL_GOODS_URLS[chunk_num * 100:])
-            self.write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV)
+            self.write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_data_items.json', self.ERRORS, isadd=True)
+            self.write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
+                               workmode='a')
+            self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
+                               self.ALL_GOODS_URLS[(chunk_num+1) * 100:])
+            self.write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
             break
+
+        self.write_to_csv(self.DEFAULT_URL_PATH, f'RESULT.csv', self.DATA_FOR_CSV)
         type(self).URL_COUNTER = 0
 
     def run_all_tasks(self):
         # Эта часть ищет все ссылки брендов на каждую группу товара.
-        # print(f"{'='*50}\nНачат сбор урлов брендов:\n{'='*50}")
-        # start = time.monotonic()
-        # parser.run_car_brands_tasks()
-        # end = time.monotonic()
-        # print(f"Время работы скрипта получение списка брендов({len(self.URLS_WITH_CAR_BRAND)}): {end - start} секунд. \n{'='*50}")
+        print(f"{'='*50}\nНачат сбор урлов брендов:\n{'='*50}")
+        start = time.monotonic()
+        parser.run_car_brands_tasks()
+        end = time.monotonic()
+        print(f"Время работы скрипта получение списка брендов({len(self.URLS_WITH_CAR_BRAND)}): {end - start} секунд. \n{'='*50}")
 
         print()
 
@@ -479,16 +498,16 @@ class ParserBamberBy:
 
         print()
 
-        # Эта часть ищет данны по списку ссылок и затем сохраняет в csv
-        start = time.monotonic()
-        self.run_get_data_from_page_tasks()
-        end = time.monotonic()
-        print(
-            f"Время работы скрипта получение списка ссылок на товары({len(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
+        # # Эта часть ищет данны по списку ссылок и затем сохраняет в csv
+        # start = time.monotonic()
+        # self.run_get_data_from_page_tasks()
+        # end = time.monotonic()
+        # print(
+        #     f"Время работы скрипта получение списка ссылок на товары({len(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
 
 
 if __name__ == '__main__':
-    # TODO: проверить как обрабатывать пагинацию
+    # TODO в каталоге continues после того как файл будет пустым рассмотреть необходимость его удаления
     parser = ParserBamberBy()
     parser.run_all_tasks()
 

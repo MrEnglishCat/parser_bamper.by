@@ -145,7 +145,7 @@ class BaseParser(ABC):
 
 
     @staticmethod
-    def get_chunks(obj, shift):
+    def get_chunks(obj, chunk_length):
         """
         Если размер итерируемого объекта очень большой, то разбивает этот итерируемый объект
         на более маленькие с длинной в shift элементов.
@@ -153,7 +153,7 @@ class BaseParser(ABC):
         :param shift: смещение
         :return: generator objects
         """
-        return (obj[i:i + shift] for i in range(0, len(obj), shift))
+        return (obj[i:i + chunk_length] for i in range(0, len(obj), chunk_length))
 
     def get_soup(self, response):
         """
