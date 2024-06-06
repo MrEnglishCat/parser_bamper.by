@@ -4,6 +4,8 @@ import json
 import os
 import sys
 import time
+import re
+
 import aiohttp
 import requests
 from pprint import pprint
@@ -24,7 +26,7 @@ class ParserBamberBy:
     """
     BASE_URL = 'https://www.bamper.by'
     BASE_URLS_CATEGORIES = 'https://bamper.by/catalog/modeli/'
-
+    ALL_CAR_URL_LIST = []
     # DEFAULT_ ... пути для файлов
     DEFAULT_URL_PATH = "data/urls"
     DEFAULT_URL_PATH_CSV = "data/result"
@@ -40,13 +42,15 @@ class ParserBamberBy:
     TASKS = []
 
     # для сбора данных
-    URLS_WITH_ATTRS_GROUPS = {}
-    ALL_GOODS_URLS = {}
+    URLS_WITH_ATTRS_GROUPS = []
+    ALL_GOODS_URLS = []
 
     # для работы с CSV/json
     DATA_FOR_CSV = []
     RESULT_CSV = []
     CSV_FIELDNAMES = (
+        'Производитель',
+        'Модель',
         'Группа',
         'Раздел',
         'Артикул',
@@ -57,6 +61,7 @@ class ParserBamberBy:
         'Валюта',
         'Город',
         'Объем двигателя',
+        'Ссылки на фото',
     )
 
     ERRORS = {}
@@ -64,7 +69,7 @@ class ParserBamberBy:
     URL_COUNTER = 0
 
     @staticmethod
-    def _get_length(obj: dict) -> int:
+    def _get_length_dict(obj: dict) -> int:
         """
         Получение общего количества ссылок. Работает с определенной вложенностью словаря dict
         """
@@ -72,8 +77,11 @@ class ParserBamberBy:
         for chapter in obj.values():
             for row in chapter.values():
                 result += len(row)
-
         return result
+
+    @staticmethod
+    def _get_length_iterable(obj: list | tuple) -> int:
+        return len(obj)
 
     @staticmethod
     def _get_header() -> dict:
@@ -187,9 +195,10 @@ class ParserBamberBy:
             __class__._check_dirs(path)
             file_found = __class__._check_dirs(path, check_file=True)
             with open(f"{path}/{filename}", mode='a' if file_found else 'w', encoding='utf-8-sig', newline='') as f_csv:
-                writer = csv.DictWriter(f_csv, fieldnames=__class__.CSV_FIELDNAMES, delimiter=';')
+                writer = csv.DictWriter(f_csv, fieldnames=__class__.CSV_FIELDNAMES, delimiter=',')
                 if not file_found:
                     writer.writeheader()
+                    pprint(data)
                 writer.writerows(data)
         else:
             print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
@@ -250,16 +259,30 @@ class ParserBamberBy:
          get urls list from main page:  self.BASE_URLS_CATEGORIES
 
         :param url: сюда передается первая ссылка с которой начинается поиск
-        :return: возвращает список ссылок
+        :return: возвращает словарь с брендом - моделью - списком ссылок на модели
         """
         result = []
+        car_brand = ''
+        pattern_car_model = fr"(?<={car_brand}-).+"
         response = requests.get(url, headers=self._get_header()).text
         soup = BeautifulSoup(response, 'html.parser')
-        for row in soup.find('div', class_='inner-box relative').find_all('ul', class_='cat-list'):
-            for row_row in row.find_all('li'):
+        list_of_data_to_be_processed = soup.find('div', class_='inner-box relative').find_all('div', class_='col-md-12')
+        # soup.find('div', class_='inner-box relative').find_all('ul', class_='cat-list')
+        for row in list_of_data_to_be_processed:
+            car_brand = row.find('h3').text.strip()
+            for row_row in row.find('div', class_='row').find_all('a'):
+                car_model = row_row.find('b').text.strip()
+                car_model_without_brand = re.search(pattern_car_model, car_model).group(0)
+                # for row_row in row.find_all('li'):
                 result.append(
-                    self.BASE_URL + row_row.find('a').get('href')
+                    [
+                        car_brand,
+                        car_model_without_brand,
+                        self.BASE_URL + row_row.get('href')
+                    ]
+
                 )
+
         return result
 
     def get_soup(self, response: requests) -> BeautifulSoup:
@@ -279,7 +302,7 @@ class ParserBamberBy:
     #         )
     #     return result_urls
 
-    def get_urls_from_soup(self, soup: BeautifulSoup) -> None:
+    def get_urls_from_soup(self, soup: BeautifulSoup, car_brand: str, car_model: str) -> None:
         """
         Получает ссылки из объекта BeautifulSoup. Добавляет их в атрибут класса URLS_WITH_ATTRS_GROUPS
         """
@@ -292,8 +315,14 @@ class ParserBamberBy:
                 group = row_text
                 continue
             chapter = row_text
-            type(self).URLS_WITH_ATTRS_GROUPS.setdefault(group, {}).setdefault(chapter, []).append(
-                self.BASE_URL + row.find('a').get('href')
+            type(self).URLS_WITH_ATTRS_GROUPS.append(
+                [
+                    car_brand,
+                    car_model,
+                    group,
+                    chapter,
+                    self.BASE_URL + row.find('a').get('href')
+                ]
             )
 
     async def get_delay(self, start: int, stop: int) -> None:
@@ -311,7 +340,8 @@ class ParserBamberBy:
         """
         return (obj[i:i + chunk_length] for i in range(0, len(obj), chunk_length))
 
-    async def _parsing_urls_from_soup(self, session: aiohttp.ClientSession, url: str, url_index: int,
+    async def _parsing_urls_from_soup(self, session: aiohttp.ClientSession, url: str, url_index: int, car_brand: str,
+                                      car_model: str,
                                       is_list_headers: bool = False) -> None:
         """
         Отправляет запрос к url и ответ передает в метод get_soup, результат которого передается в
@@ -321,33 +351,38 @@ class ParserBamberBy:
         async with session.get(url, headers=self._get_header()) as response:
             soup = self.get_soup(await response.read())
             # if is_list_headers: # TODO удалить эту строку, строку с return, переменную is_list_headers
-            self.get_urls_from_soup(soup)
+            self.get_urls_from_soup(soup, car_brand, car_model)
             # return self.get_urls_from_soup(soup)
 
     async def get_list_attr_groups_url(self, session: aiohttp.ClientSession, url: str,
-                                       url_index: int) -> None:  # url это ссылка с self.BASE_URLS_CATEGORIES
+                                       url_index: int, car_brand: str,
+                                       car_model: str) -> None:  # url это ссылка с self.BASE_URLS_CATEGORIES
         """
             получение списка групп, разделов и ссылок на сами товары
         """
         await self.get_delay(1, 2)
         try:
-            await self._parsing_urls_from_soup(session, url, url_index, is_list_headers=True)
+            await self._parsing_urls_from_soup(session, url, url_index, car_brand, car_model, is_list_headers=True)
             print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
             type(self).ERRORS.setdefault('get_list_car_brands_url', {}).setdefault(f"{url}", tuple(e.args))
             type(self).ERRORS_URLS.add(url)
             print(f"\t[ERROR id {url_index}] ОШИБКА! ")
 
-    async def get_tasks_attrs_groups(self, chunk_urls: tuple | list) -> None:
+    async def get_tasks_attrs_groups(self, chunk_urls: list[list]) -> None:
         """
         Полчает на вход чанк(итерируемый объект) по его ссылкам формирует таски используя метод get_list_attr_groups_url
         """
         type(self).TASKS.clear()
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
-            for url_index, url in enumerate(chunk_urls, 1):
+            for url_index, car_data in enumerate(chunk_urls, 1):
+                car_brand = car_data[0]
+                car_model = car_data[1]
+                url = car_data[2]
                 type(self).TASKS.append(
-                    asyncio.create_task(self.get_list_attr_groups_url(session, url, url_index))
+                    asyncio.create_task(self.get_list_attr_groups_url(session, url, url_index, car_brand, car_model))
                 )
+                break  # TODO TEST на одной изначальной ссылке
             await asyncio.gather(*self.TASKS)
 
     def run_attrs_groups_tasks(self) -> None:
@@ -357,10 +392,13 @@ class ParserBamberBy:
         В конце очищает атрибуты класса где хранятся ошибки (ERRORS, ERRORS_URLS)
         """
         print(f"{'=' * 50}\nНачат сбор урлов всех моделей авто:\n{'=' * 50}")
-        type(self).GOODS_ALL_URL_LIST = self.get_main_urls(self.BASE_URLS_CATEGORIES)
-        self._write_to_file(self.DEFAULT_URL_PATH, 'main_urls.txt',
-                            data=self.GOODS_ALL_URL_LIST)
-        chunks = self.get_chunks(self.GOODS_ALL_URL_LIST, 100)
+        type(self).ALL_CAR_URL_LIST.extend(
+            self.get_main_urls(self.BASE_URLS_CATEGORIES)
+        )
+        self._write_to_json(self.DEFAULT_URL_PATH, 'main_urls.json',
+                            data=self.ALL_CAR_URL_LIST)
+
+        chunks = self.get_chunks(self.ALL_CAR_URL_LIST, 100)
 
         for chunk_id, chunk_urls in enumerate(chunks):
             print('-' * 100)
@@ -378,12 +416,18 @@ class ParserBamberBy:
                                 self.ERRORS, isadd=True)
             self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
                                 f'ERRORS_URLS_attrs_groups.txt', self.ERRORS_URLS, workmode='a')
-            if chunk_id == 2:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на модели авто
+            if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на модели авто
                 break
         type(self).ERRORS.clear()
         type(self).ERRORS_URLS.clear()
 
-    async def get_all_goods_from_page(self, session: aiohttp.ClientSession, url: str, url_index: int, group: str,
+    async def get_all_goods_from_page(self,
+                                      session: aiohttp.ClientSession,
+                                      url: str,
+                                      url_index: int,
+                                      car_brand: str,
+                                      car_model: str,
+                                      group: str,
                                       chapter: str) -> None:
         """
         Метод получающий все позиции с загруженной странице по адресу url.
@@ -411,8 +455,14 @@ class ParserBamberBy:
                         continue
                     for row_index, row in enumerate(
                             soup.find('div', class_='list-wrapper').find_all('div', class_='add-image'), 1):
-                        type(self).ALL_GOODS_URLS.setdefault(group, {}).setdefault(chapter, []).append(
-                            self.BASE_URL + row.find('a').get('href')
+                        type(self).ALL_GOODS_URLS.append(
+                            [
+                                car_brand,
+                                car_model,
+                                group,
+                                chapter,
+                                self.BASE_URL + row.find('a').get('href')
+                            ]
                         )
                     paginagions = self._check_pagination(soup)
 
@@ -427,9 +477,9 @@ class ParserBamberBy:
             except Exception as e:
                 type(self).ERRORS.setdefault('get_all_goods_from_page', {}).setdefault(f"{url}", tuple(e.args))
                 type(self).ERRORS_URLS.add(url)
-                print(f"\t[ERROR id {url_index}] ОШИБКА! ")
+                print(f"\t[ERROR id {url_index}] ОШИБКА! {e}")  # TODO ERRORS
 
-    async def get_tasks_car_goods(self, chunk: list | tuple, group: str, chapter: str) -> None:
+    async def get_tasks_car_goods(self, chunk_data: list | tuple) -> None:
         """
         метод для формирования задач по получению ссылок на товары.
 
@@ -441,10 +491,15 @@ class ParserBamberBy:
         type(self).TASKS.clear()
         print(f'[INFO] Формирование задач для начала сбора url товаров...')
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
-            for url_index, url in enumerate(chunk, 1):
+            for url_index, data in enumerate(chunk_data, 1):
+                car_brand = data[0]
+                car_model = data[1]
+                group = data[2]
+                chapter = data[3]
+                url = data[4]
                 type(self).TASKS.append(
                     asyncio.create_task(
-                        self.get_all_goods_from_page(session, url, url_index, group, chapter)
+                        self.get_all_goods_from_page(session, url, url_index, car_brand, car_model, group, chapter)
                     )
                 )
 
@@ -460,33 +515,36 @@ class ParserBamberBy:
         """
         if not type(self).URLS_WITH_ATTRS_GROUPS:
             type(self).URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
+        chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS, chunk_length=100)
+        for chunk_id, chunk_data in enumerate(chunks):
+            print('-' * 100)
+            # print(f'{"\t" * 10} Chunk id: #{chunk_id}')
+            print(f'{"\t" * 10} Chunk id: #{chunk_id}')  # TODO продолжить здесь, разобраться с чанками ил без них
+            print('-' * 100)
 
-        for group, group_values in self.URLS_WITH_ATTRS_GROUPS.items():
-            for chapter, chapter_values in group_values.items():
-                chunks = self.get_chunks(chapter_values, 50)
-                for chunk_id, chunk_urls in enumerate(chunks):
-                    print('-' * 100)
-                    print(f'{"\t" * 10} Chunk id: #{chunk_id}')
-                    print('-' * 100)
-                    asyncio.run(
-                        self.get_tasks_car_goods(chunk_urls, group, chapter)
-                    )
-                    self._write_to_json(self.DEFAULT_URL_PATH, 'all_goods_urls.json', self.ALL_GOODS_URLS, isadd=True)
-                    self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                        f'ERRORS_goods_urls.json', self.ERRORS, isadd=True)
-                    self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                        f'ERRORS_URLS_goods_urls.txt', self.ERRORS_URLS,
-                                        workmode='a')
-                    if chunk_id == 1:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на сами объявдения
-                        break
+            asyncio.run(
+                self.get_tasks_car_goods(chunk_data)
+            )
+            self._write_to_json(self.DEFAULT_URL_PATH, 'all_goods_urls.json', self.ALL_GOODS_URLS, isadd=True)
+            self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+                                f'ERRORS_goods_urls.json', self.ERRORS, isadd=True)
+            self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+                                f'ERRORS_URLS_goods_urls.txt', self.ERRORS_URLS,
+                                workmode='a')
+            if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на сами объявдения
                 break
-            break
 
         type(self).URL_COUNTER = 0
         type(self).ERRORS.clear()
         type(self).ERRORS_URLS.clear()
 
-    def get_data(self, soup: BeautifulSoup, url: str, group: str, chapter: str) -> dict:
+    def get_data(self,
+                 soup: BeautifulSoup,
+                 url: str,
+                 car_brand:str,
+                 car_model:str,
+                 group: str,
+                 chapter: str) -> dict:
         """
         Метод получения данных со страницы самого товара
 
@@ -508,10 +566,18 @@ class ParserBamberBy:
                 'Валюта': units,
                 'Город': city,
                 'Объем двигателя': engine_v,
+                'Ссылки на фото',
             }
 
         """
         result = {}
+
+        image_urls = []
+        data_of_image_urls = soup.find('div', class_='detail-image').find_all('img')
+        for url in data_of_image_urls:
+            image_urls.append(
+                self.BASE_URL + url['src'])
+
         item_name = soup.find('h1', class_='auto-heading onestring').find('span').text.strip()
         try:
             price = soup.find('h1', class_='auto-heading onestring').find('meta', itemprop='price').get('content')
@@ -561,6 +627,8 @@ class ParserBamberBy:
         result.update(
             {
                 # 'url': url,
+                'Производитель': car_brand,
+                'Модель': car_model,
                 'Группа': group,
                 'Раздел': chapter,
                 'Артикул': vendor_code,
@@ -571,11 +639,19 @@ class ParserBamberBy:
                 'Валюта': units,
                 'Город': city,
                 'Объем двигателя': engine_v,
+                'Ссылки на фото': ','.join(image_urls) if image_urls else 'Изображение не найдены',
             }
         )
+        pprint(result)
         return result
 
-    async def get_data_from_page(self, session: aiohttp.ClientSession, url: str, url_index: int, group: str,
+    async def get_data_from_page(self,
+                                 session: aiohttp.ClientSession,
+                                 url: str,
+                                 url_index: int,
+                                 car_brand:str,
+                                 car_model:str,
+                                 group: str,
                                  chapter: str) -> None:
         """
         Метод получающий объект BeautifulSoup по указанному url, запускающий сбор данных со страницы
@@ -596,7 +672,7 @@ class ParserBamberBy:
                 if (a := soup.find('div', class_='row block404')):
                     raise ValueError(f'Error 404 - {a.text}')
                 type(self).DATA_FOR_CSV.append(
-                    self.get_data(soup, url, group, chapter)
+                    self.get_data(soup, url, car_brand, car_model, group, chapter)
                 )
                 print(f"\t[{self.URL_COUNTER}][SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
@@ -604,7 +680,7 @@ class ParserBamberBy:
             type(self).ERRORS_URLS.add(url)
             print(f"\t[ERROR id {url_index}] ОШИБКА! ")
 
-    async def get_tasks_car_items(self, chunk_urls: list | tuple, group: str, chapter: str) -> None:
+    async def get_tasks_car_items(self, chunk_data: list | tuple) -> None:
         """
             Формирование задач по сбору данных о товарах
 
@@ -618,10 +694,15 @@ class ParserBamberBy:
         type(self).TASKS.clear()
         print(f'[INFO] Формирование задач для начала сбора данных о товарах...')
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
-            for url_index, url in enumerate(chunk_urls, 1):
+            for url_index, data in enumerate(chunk_data, 1):
+                car_brand = data[0]
+                car_model = data[1]
+                group = data[2]
+                chapter = data[3]
+                url = data[4]
                 type(self).TASKS.append(
                     asyncio.create_task(
-                        self.get_data_from_page(session, url, url_index, group, chapter)
+                        self.get_data_from_page(session, url, url_index, car_brand, car_model, group, chapter)
                     )
                 )
 
@@ -637,32 +718,31 @@ class ParserBamberBy:
             type(self).ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH}/all_goods_urls.json', isjson=True)
             if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
                 os.remove(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv")
+        chunks = self.get_chunks(self.ALL_GOODS_URLS, 100)
 
-        for group, group_values in self.ALL_GOODS_URLS.items():
-            for chapter, chapter_values in group_values.items():
-                chunks = self.get_chunks(chapter_values, 100)
-                for chunk_id, chunk_urls in enumerate(chunks):
-                    print('-' * 100)
-                    print(f'{"\t" * 10} Chunk #{chunk_id}')
-                    print('-' * 100)
-                    asyncio.run(
-                        self.get_tasks_car_items(chunk_urls, group, chapter)
-                    )
-                    self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                        f'ERRORS_data_items.json', self.ERRORS, isadd=True)
-                    self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                        f'ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
-                                        workmode='a')
-                    # self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
-                    #                    self.ALL_GOODS_URLS[(chunk_id + 1) * 100:])
-                    self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
-                    self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
-                    # if chunk_id == 1:  # TODO TEST ограничение на количество обрабатываемых чанков при получении данных о товаре
-                    #     break
-                    type(self).DATA_FOR_CSV.clear()
-                type(self).URL_COUNTER = 0
+        for chunk_id, chunk_data in enumerate(chunks):
+            print('-' * 100)
+            print(f'{"\t" * 10} Chunk #{chunk_id}')
+            print('-' * 100)
+            asyncio.run(
+                self.get_tasks_car_items(chunk_data)
+            )
+            self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+                                f'ERRORS_data_items.json', self.ERRORS, isadd=True)
+            self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+                                f'ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
+                                workmode='a')
+            # self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
+            #                    self.ALL_GOODS_URLS[(chunk_id + 1) * 100:])
+            self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
+            self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
 
-    def run_all_tasks(self)->None:
+            type(self).DATA_FOR_CSV.clear()
+            type(self).URL_COUNTER = 0
+            if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении данных о товаре
+                break
+
+    def run_all_tasks(self) -> None:
         """
             Метод изначально удаляет старые файлы с данными(кроме файлов ошибок)
             После поочередно запускает методы:
@@ -677,31 +757,35 @@ class ParserBamberBy:
         self.run_attrs_groups_tasks()
         end = time.monotonic()
         print(
-            f"Время работы скрипта получение списка ({len(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд. \n{'=' * 50}")
+            f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд. \n{'=' * 50}")
 
         print()
         self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-            f"Время работы скрипта получение списка ({len(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",), workmode='a')
+            f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",),
+                            workmode='a')
 
         # Эта часть ищет ссылка на сами товары.
         start = time.monotonic()
         self.run_car_item_tasks()
         end = time.monotonic()
         print(
-            f"Время работы скрипта получение списка ссылок на товары({self._get_length(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд. \n{'=' * 50}")
+            f"Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
 
         print()
         self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-            f"Время работы скрипта получение списка ссылок на товары({self._get_length(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",), workmode='a')
+            f"Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",),
+                            workmode='a')
 
         # Эта часть ищет данные по списку ссылок и затем сохраняет в csv
         start = time.monotonic()
         self.run_get_data_from_page_tasks()
         end = time.monotonic()
         print(
-            f"Время работы скрипта получение данных о товарах({self._get_length(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
+            f"Время работы скрипта получение данных о товарах({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
         self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-            f"Время работы скрипта получение данных о товарах({self._get_length(self.ALL_GOODS_URLS)}): {end - start} секунд.",), workmode='a')
+            f"Время работы скрипта получение данных о товарах({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд.",),
+                            workmode='a')
+
 
 
 if __name__ == '__main__':
