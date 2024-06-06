@@ -105,7 +105,7 @@ class ParserBamberBy:
         :result: True|False|None
         """
         if check_file:
-            return os.path.exists(path)
+            return os.path.exists(path) and os.path.isfile(path)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -194,11 +194,12 @@ class ParserBamberBy:
         if filename and data:
             __class__._check_dirs(path)
             file_found = __class__._check_dirs(path, check_file=True)
+            print('file_found', file_found)
             with open(f"{path}/{filename}", mode='a' if file_found else 'w', encoding='utf-8-sig', newline='') as f_csv:
-                writer = csv.DictWriter(f_csv, fieldnames=__class__.CSV_FIELDNAMES, delimiter=',')
+                writer = csv.DictWriter(f_csv, fieldnames=__class__.CSV_FIELDNAMES, delimiter=';')
                 if not file_found:
                     writer.writeheader()
-                    pprint(data)
+                    print('WRITE_HEADERS')
                 writer.writerows(data)
         else:
             print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
@@ -360,7 +361,7 @@ class ParserBamberBy:
         """
             получение списка групп, разделов и ссылок на сами товары
         """
-        await self.get_delay(1, 2)
+        await self.get_delay(2, 3)
         try:
             await self._parsing_urls_from_soup(session, url, url_index, car_brand, car_model, is_list_headers=True)
             print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
@@ -439,13 +440,13 @@ class ParserBamberBy:
         chapter: str - название раздела запчастей
 
         """
-        await self.get_delay(1, 2)
+        await self.get_delay(2, 3)
         type(self).URL_COUNTER += 1
         PREVIOUS_ACTIVE_PAGE = ''  # переменная только для этой функции get_all_goods_from_page()
         print(f"[{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
         start = True
         while start:
-            await self.get_delay(1, 2)
+            await self.get_delay(2, 3)
             try:
                 async with session.get(url, headers=self._get_header()) as response:
                     soup = self.get_soup(await response.read())
@@ -642,7 +643,6 @@ class ParserBamberBy:
                 'Ссылки на фото': ','.join(image_urls) if image_urls else 'Изображение не найдены',
             }
         )
-        pprint(result)
         return result
 
     async def get_data_from_page(self,
@@ -751,6 +751,9 @@ class ParserBamberBy:
                 3 run_get_data_from_page_tasks
         """
         self._delete_old_files(self.DEFAULT_URL_PATH)
+        self._delete_old_files(self.DEFAULT_URL_PATH_CSV)
+
+
 
         # Эта часть ищет все ссылки брендов на каждую группу товара.
         start = time.monotonic()
@@ -773,7 +776,7 @@ class ParserBamberBy:
 
         print()
         self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-            f"Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",),
+            f"Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд.",),
                             workmode='a')
 
         # Эта часть ищет данные по списку ссылок и затем сохраняет в csv
