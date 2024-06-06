@@ -79,6 +79,7 @@ class ParserBamberBy:
     def _get_header() -> dict:
         """
         Используется для рандомизации headers в запросах
+
         :return: заголовки/dict
         """
         return {
@@ -90,6 +91,7 @@ class ParserBamberBy:
     def _check_dirs(path: str, check_file: bool = False) -> bool | None:
         """
         Используется для проверки наличия пути. Или проверки наличия файла(при check_file=True)
+
         :path:  При check_file=False - проверяет, существуют ли каталоги, если каких-то нету, то их создает, метод возвращает None
                 При check_file=True - проверяет, существует ли указанный файл, если существует возвращает True, иначе False
         :result: True|False|None
@@ -103,6 +105,7 @@ class ParserBamberBy:
     def _delete_old_files(path: str) -> None:
         """
         Удаление файлов в каталоге data/urls:
+
             main_urls.txt;
             rls_with_attrs_groups.json;
             all_goods_urls.json;
@@ -118,6 +121,7 @@ class ParserBamberBy:
     def _write_to_json(path: str, filename: str = None, data: dict = None, isadd: bool = False) -> None:
         """
         Запись данных в json
+
         :path путь до файла
         :filename имя файла до которого указан путь в path
         :data Словарь с данными
@@ -151,6 +155,7 @@ class ParserBamberBy:
     def _write_to_file(path: str, filename: str = None, data: list | tuple = None, workmode: str = 'w') -> None:
         """
         Запись данных в txt
+
         :path путь до файла
         :filename имя файла до которого указан путь в path
         :data Словарь с данными
@@ -169,9 +174,10 @@ class ParserBamberBy:
             print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
 
     @staticmethod
-    def _write_to_csv(path:str, filename:str=None, data:dict=None)->None:
+    def _write_to_csv(path: str, filename: str = None, data: dict = None) -> None:
         """
         Запись данных в csv
+
         :path путь до файла
         :filename имя файла до которого указан путь в path
         :data Словарь с данными
@@ -189,9 +195,10 @@ class ParserBamberBy:
             print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
 
     @staticmethod
-    def _read_file(path:str, isjson:bool=False)->None:
+    def _read_file(path: str, isjson: bool = False) -> None:
         """
         Чтение данных из txt или json
+
         :path путь до файла
         :isjson Если False - чтение будет из txt. Если True, то чтение из json
         :return None
@@ -204,16 +211,19 @@ class ParserBamberBy:
             return (row.strip() for row in f.readlines())
 
     @staticmethod
-    def _get_active_page(soup:BeautifulSoup)->str:
+    def _get_active_page(soup: BeautifulSoup) -> str:
         """
         Метод для получения номера активной страницы
+
+        soup: BeautifulSoup
         """
         return soup.find('div', class_='pagination-bar').find('li', class_='active').text.strip()
 
     @staticmethod
-    def _check_pagination(soup:BeautifulSoup)->str:
+    def _check_pagination(soup: BeautifulSoup) -> str:
         """
         Проверка наличия пагинации
+
         soup: BeautifulSoup
         """
         # TODO добавлен try
@@ -226,18 +236,21 @@ class ParserBamberBy:
             return '1 страница'
 
     @staticmethod
-    def _get_datetime(split=False):
-        """"""  # TODO продолжить отсюда
+    def _get_datetime(split: bool = False) -> str | list:
+        """
+            получение даты и времени. При необходимости(split=True) отделение даты от вермени
+        """
         result = datetime.now().strftime("%d.%m.%Y_%H.%M.%S")
         if split:
             return result.split('_')[0]
         return result
 
-    def get_main_urls(self, url):
+    def get_main_urls(self, url: str) -> list:
         """
          get urls list from main page:  self.BASE_URLS_CATEGORIES
-        :param url:
-        :return:
+
+        :param url: сюда передается первая ссылка с которой начинается поиск
+        :return: возвращает список ссылок
         """
         result = []
         response = requests.get(url, headers=self._get_header()).text
@@ -249,7 +262,10 @@ class ParserBamberBy:
                 )
         return result
 
-    def get_soup(self, response):
+    def get_soup(self, response: requests) -> BeautifulSoup:
+        """
+        Получение объекта BeautifulSoup для дальнейшего поиска элементов страницы
+        """
         soup = BeautifulSoup(response, 'html.parser')
         return soup
 
@@ -263,7 +279,10 @@ class ParserBamberBy:
     #         )
     #     return result_urls
 
-    def get_urls_from_soup(self, soup):
+    def get_urls_from_soup(self, soup: BeautifulSoup) -> None:
+        """
+        Получает ссылки из объекта BeautifulSoup. Добавляет их в атрибут класса URLS_WITH_ATTRS_GROUPS
+        """
         group = None
         # chapter = None
         for row in soup.find('div', class_='relative').find_all('li'):
@@ -277,21 +296,39 @@ class ParserBamberBy:
                 self.BASE_URL + row.find('a').get('href')
             )
 
-    async def get_delay(self, start, stop):
+    async def get_delay(self, start: int, stop: int) -> None:
+        """
+        Вносит рандомную задержку. Для пайзы в работе скрипта между запросами.
+
+        :start начало для диапазона из которого выбирается время паузы
+        :stop окончание для диапазона из которого выбирается время паузы
+        """
         await asyncio.sleep(randrange(start, stop))
 
-    def get_chunks(self, obj, chunk_length):
+    def get_chunks(self, obj: list | tuple, chunk_length: int) -> list | tuple:
+        """
+        Делит большой итерируемый объект на более маленькие для удобства обработыки
+        """
         return (obj[i:i + chunk_length] for i in range(0, len(obj), chunk_length))
 
-    async def _parsing_urls_from_soup(self, session, url, url_index, is_list_headers=False):
+    async def _parsing_urls_from_soup(self, session: aiohttp.ClientSession, url: str, url_index: int,
+                                      is_list_headers: bool = False) -> None:
+        """
+        Отправляет запрос к url и ответ передает в метод get_soup, результат которого передается в
+        метод get_urls_from_soup.
+        """
         print(f"[INFO id {url_index}] Сбор данных по {url}")
         async with session.get(url, headers=self._get_header()) as response:
             soup = self.get_soup(await response.read())
-            # if is_list_headers:
+            # if is_list_headers: # TODO удалить эту строку, строку с return, переменную is_list_headers
             self.get_urls_from_soup(soup)
             # return self.get_urls_from_soup(soup)
 
-    async def get_list_attr_groups_url(self, session, url, url_index):  # url это ссылка с self.BASE_URLS_CATEGORIES
+    async def get_list_attr_groups_url(self, session: aiohttp.ClientSession, url: str,
+                                       url_index: int) -> None:  # url это ссылка с self.BASE_URLS_CATEGORIES
+        """
+            получение списка групп, разделов и ссылок на сами товары
+        """
         await self.get_delay(1, 2)
         try:
             await self._parsing_urls_from_soup(session, url, url_index, is_list_headers=True)
@@ -301,7 +338,10 @@ class ParserBamberBy:
             type(self).ERRORS_URLS.add(url)
             print(f"\t[ERROR id {url_index}] ОШИБКА! ")
 
-    async def get_tasks_attrs_groups(self, chunk_urls):
+    async def get_tasks_attrs_groups(self, chunk_urls: tuple | list) -> None:
+        """
+        Полчает на вход чанк(итерируемый объект) по его ссылкам формирует таски используя метод get_list_attr_groups_url
+        """
         type(self).TASKS.clear()
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
             for url_index, url in enumerate(chunk_urls, 1):
@@ -310,7 +350,12 @@ class ParserBamberBy:
                 )
             await asyncio.gather(*self.TASKS)
 
-    def run_attrs_groups_tasks(self):
+    def run_attrs_groups_tasks(self) -> None:
+        """
+        метод запускающий на выполнение сформированные задачи в get_tasks_attrs_groups
+        Так же сохраняет результаты собранных данных и ошибок в отдельные файлы.
+        В конце очищает атрибуты класса где хранятся ошибки (ERRORS, ERRORS_URLS)
+        """
         print(f"{'=' * 50}\nНачат сбор урлов всех моделей авто:\n{'=' * 50}")
         type(self).GOODS_ALL_URL_LIST = self.get_main_urls(self.BASE_URLS_CATEGORIES)
         self._write_to_file(self.DEFAULT_URL_PATH, 'main_urls.txt',
@@ -321,9 +366,11 @@ class ParserBamberBy:
             print('-' * 100)
             print(f'{"\t" * 10} Chunk id: #{chunk_id}')
             print('-' * 100)
+
             asyncio.run(
                 self.get_tasks_attrs_groups(chunk_urls)
             )
+
             self._write_to_json(self.DEFAULT_URL_PATH, 'urls_with_attrs_groups.json', self.URLS_WITH_ATTRS_GROUPS,
                                 isadd=True)
             self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
@@ -336,7 +383,18 @@ class ParserBamberBy:
         type(self).ERRORS.clear()
         type(self).ERRORS_URLS.clear()
 
-    async def get_all_goods_from_page(self, session, url, url_index, group, chapter):
+    async def get_all_goods_from_page(self, session: aiohttp.ClientSession, url: str, url_index: int, group: str,
+                                      chapter: str) -> None:
+        """
+        Метод получающий все позиции с загруженной странице по адресу url.
+            после поиска  url'ов товаров на странице они доабвляются в атрибут класса ALL_GOODS_URLS
+        session: aiohttp.ClientSession
+        url: url - загружаемая ссылка
+        url_index: int индекс url в пределах chunk'a
+        group: str - название группы запчастей
+        chapter: str - название раздела запчастей
+
+        """
         await self.get_delay(1, 2)
         type(self).URL_COUNTER += 1
         PREVIOUS_ACTIVE_PAGE = ''  # переменная только для этой функции get_all_goods_from_page()
@@ -371,7 +429,15 @@ class ParserBamberBy:
                 type(self).ERRORS_URLS.add(url)
                 print(f"\t[ERROR id {url_index}] ОШИБКА! ")
 
-    async def get_tasks_car_goods(self, chunk, group, chapter):
+    async def get_tasks_car_goods(self, chunk: list | tuple, group: str, chapter: str) -> None:
+        """
+        метод для формирования задач по получению ссылок на товары.
+
+        chunk: итерируемый объект в котором модели авто
+        group: str - название группы запчастей
+        chapter: str - название раздела запчастей
+
+        """
         type(self).TASKS.clear()
         print(f'[INFO] Формирование задач для начала сбора url товаров...')
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
@@ -384,7 +450,14 @@ class ParserBamberBy:
 
             await asyncio.gather(*self.TASKS)
 
-    def run_car_item_tasks(self):
+    def run_car_item_tasks(self) -> None:
+        """
+        Запускает задачи на выполнение по сбору ссылок на товары. Так же если скрипт тестируется,
+        то предусмотрена загрузка данных в атрибут класса URLS_WITH_ATTRS_GROUPS из файла 'data/urls/urls_with_attrs_groups.json'
+
+        так же сохраняет собранные данные и ошибки в отдельные файлы. Сохранение происходит по чанкам. Последующие
+        данные других чанков записываются в конец файла созданного при обработке первого чанка
+        """
         if not type(self).URLS_WITH_ATTRS_GROUPS:
             type(self).URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
 
@@ -413,7 +486,31 @@ class ParserBamberBy:
         type(self).ERRORS.clear()
         type(self).ERRORS_URLS.clear()
 
-    def get_data(self, soup, url, group, chapter):
+    def get_data(self, soup: BeautifulSoup, url: str, group: str, chapter: str) -> dict:
+        """
+        Метод получения данных со страницы самого товара
+
+        soup: BeautifulSoup - объект из которого берутся данные
+        url: url - использовался только при тестах для добавления в итоговый результат
+        group: str - название группы запчастей
+        chapter: str - название раздела запчастей
+
+        return: возвращает словарь с данными вида:
+            {
+                # 'url': url,
+                'Группа': group,
+                'Раздел': chapter,
+                'Артикул': vendor_code,
+                'Название': item_name,
+                'Примечание': item_comment,
+                'Номер запчасти': item_number,
+                'Цена': price,
+                'Валюта': units,
+                'Город': city,
+                'Объем двигателя': engine_v,
+            }
+
+        """
         result = {}
         item_name = soup.find('h1', class_='auto-heading onestring').find('span').text.strip()
         try:
@@ -478,7 +575,19 @@ class ParserBamberBy:
         )
         return result
 
-    async def get_data_from_page(self, session, url, url_index, group, chapter):
+    async def get_data_from_page(self, session: aiohttp.ClientSession, url: str, url_index: int, group: str,
+                                 chapter: str) -> None:
+        """
+        Метод получающий объект BeautifulSoup по указанному url, запускающий сбор данных со страницы
+        После записывающий в атрибут класса DATA_FOR_CSV.
+
+        session: объект сессии aiohttp.ClientSession
+        url: url для поиска
+        url_index: int индекс url в пределах chunk'a
+        group: str - название группы запчастей
+        chapter: str - название раздела запчастей
+        return: None
+        """
         await self.get_delay(1, 3)
         type(self).URL_COUNTER += 1
         try:
@@ -495,7 +604,17 @@ class ParserBamberBy:
             type(self).ERRORS_URLS.add(url)
             print(f"\t[ERROR id {url_index}] ОШИБКА! ")
 
-    async def get_tasks_car_items(self, chunk_urls, group, chapter):
+    async def get_tasks_car_items(self, chunk_urls: list | tuple, group: str, chapter: str) -> None:
+        """
+            Формирование задач по сбору данных о товарах
+
+            chunk_urls: итерируемый объект в котором содержатся  url для поиска данных о товарах
+            group: str - название группы запчастей
+            chapter: str - название раздела запчастей
+
+            return: None
+
+        """
         type(self).TASKS.clear()
         print(f'[INFO] Формирование задач для начала сбора данных о товарах...')
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
@@ -508,7 +627,12 @@ class ParserBamberBy:
 
             await asyncio.gather(*self.TASKS)
 
-    def run_get_data_from_page_tasks(self):
+    def run_get_data_from_page_tasks(self) -> None:
+        """
+            Запуск задач сформированных методом get_tasks_car_items
+            После сохраниение собранных данных из атрибута класса DATA_FOR_CSV в csv, а ошибок в отдельный файл
+        """
+
         if not type(self).ALL_GOODS_URLS:
             type(self).ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH}/all_goods_urls.json', isjson=True)
             if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
@@ -538,19 +662,26 @@ class ParserBamberBy:
                     type(self).DATA_FOR_CSV.clear()
                 type(self).URL_COUNTER = 0
 
-    def run_all_tasks(self):
+    def run_all_tasks(self)->None:
+        """
+            Метод изначально удаляет старые файлы с данными(кроме файлов ошибок)
+            После поочередно запускает методы:
+                1 run_attrs_groups_tasks
+                2 run_car_item_tasks
+                3 run_get_data_from_page_tasks
+        """
         self._delete_old_files(self.DEFAULT_URL_PATH)
 
         # Эта часть ищет все ссылки брендов на каждую группу товара.
         start = time.monotonic()
-        parser.run_attrs_groups_tasks()
+        self.run_attrs_groups_tasks()
         end = time.monotonic()
         print(
             f"Время работы скрипта получение списка ({len(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд. \n{'=' * 50}")
 
         print()
         self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-            f"Время работы скрипта получение списка ({len(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",))
+            f"Время работы скрипта получение списка ({len(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",), workmode='a')
 
         # Эта часть ищет ссылка на сами товары.
         start = time.monotonic()
@@ -561,7 +692,7 @@ class ParserBamberBy:
 
         print()
         self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-            f"Время работы скрипта получение списка ссылок на товары({self._get_length(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",))
+            f"Время работы скрипта получение списка ссылок на товары({self._get_length(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",), workmode='a')
 
         # Эта часть ищет данные по списку ссылок и затем сохраняет в csv
         start = time.monotonic()
@@ -570,7 +701,7 @@ class ParserBamberBy:
         print(
             f"Время работы скрипта получение данных о товарах({self._get_length(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
         self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-            f"Время работы скрипта получение данных о товарах({self._get_length(self.ALL_GOODS_URLS)}): {end - start} секунд.",))
+            f"Время работы скрипта получение данных о товарах({self._get_length(self.ALL_GOODS_URLS)}): {end - start} секунд.",), workmode='a')
 
 
 if __name__ == '__main__':
