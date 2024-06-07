@@ -515,7 +515,7 @@ class ParserBamberBy:
         """
         if not type(self).URLS_WITH_ATTRS_GROUPS:
             type(self).URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
-        chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS, chunk_length=100)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
+        chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS, chunk_length=200)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
         # len_chunks = len(chunks)
         for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
