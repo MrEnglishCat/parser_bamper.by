@@ -407,8 +407,8 @@ class ParserBamberBy:
                 self.get_tasks_attrs_groups(chunk_data)
             )
 
-            # self._write_to_json(self.DEFAULT_URL_PATH, 'urls_with_attrs_groups.json', self.URLS_WITH_ATTRS_GROUPS,
-            #                     isadd=True)
+            self._write_to_json(self.DEFAULT_URL_PATH, 'urls_with_attrs_groups.json', self.URLS_WITH_ATTRS_GROUPS,
+                                isadd=True)
             self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
                                 f'ERRORS_attrs_groups.json',
                                 self.ERRORS, isadd=True)
@@ -515,7 +515,7 @@ class ParserBamberBy:
         """
         if not type(self).URLS_WITH_ATTRS_GROUPS:
             type(self).URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
-        chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS, chunk_length=100)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
+        chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS, chunk_length=200)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
         # len_chunks = len(chunks)
         for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
@@ -525,7 +525,7 @@ class ParserBamberBy:
             asyncio.run(
                 self.get_tasks_car_goods(chunk_data)
             )
-            # self._write_to_json(self.DEFAULT_URL_PATH, 'all_goods_urls.json', self.ALL_GOODS_URLS, isadd=True)
+            self._write_to_json(self.DEFAULT_URL_PATH, 'all_goods_urls.json', self.ALL_GOODS_URLS, isadd=True)
             self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
                                 f'ERRORS_goods_urls.json', self.ERRORS, isadd=True)
             self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
@@ -736,7 +736,7 @@ class ParserBamberBy:
                                 workmode='a')
             # self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
             #                    self.ALL_GOODS_URLS[(chunk_id + 1) * 100:])
-            # self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
+            self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
             self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
 
             # type(self).DATA_FOR_CSV.clear()
