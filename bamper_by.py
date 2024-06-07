@@ -194,12 +194,10 @@ class ParserBamberBy:
         if filename and data:
             __class__._check_dirs(path)
             file_found = __class__._check_dirs(path, check_file=True)
-            print('file_found', file_found)
             with open(f"{path}/{filename}", mode='a' if file_found else 'w', encoding='utf-8-sig', newline='') as f_csv:
                 writer = csv.DictWriter(f_csv, fieldnames=__class__.CSV_FIELDNAMES, delimiter=';')
                 if not file_found:
                     writer.writeheader()
-                    print('WRITE_HEADERS')
                 writer.writerows(data)
         else:
             print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
@@ -339,6 +337,7 @@ class ParserBamberBy:
         """
         Делит большой итерируемый объект на более маленькие для удобства обработыки
         """
+
         return (obj[i:i + chunk_length] for i in range(0, len(obj), chunk_length))
 
     async def _parsing_urls_from_soup(self, session: aiohttp.ClientSession, url: str, url_index: int, car_brand: str,
@@ -348,7 +347,8 @@ class ParserBamberBy:
         Отправляет запрос к url и ответ передает в метод get_soup, результат которого передается в
         метод get_urls_from_soup.
         """
-        print(f"[INFO id {url_index}] Сбор данных по {url}")
+        type(self).URL_COUNTER += 1
+        print(f"[{self.URL_COUNTER}][INFO id {url_index}] Сбор данных по {url}")
         async with session.get(url, headers=self._get_header()) as response:
             soup = self.get_soup(await response.read())
             self.get_urls_from_soup(soup, car_brand, car_model)
@@ -362,7 +362,7 @@ class ParserBamberBy:
         await self.get_delay(2, 3)
         try:
             await self._parsing_urls_from_soup(session, url, url_index, car_brand, car_model, is_list_headers=True)
-            print(f"\t[{url_index * 100}][SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
+            print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
             type(self).ERRORS.setdefault('get_list_car_brands_url', {}).setdefault(f"{url}", tuple(e.args))
             type(self).ERRORS_URLS.add(url)
@@ -462,6 +462,7 @@ class ParserBamberBy:
                                 self.BASE_URL + row.find('a').get('href')
                             ]
                         )
+
                     paginagions = self._check_pagination(soup)
 
                     # print('\t\t\t\t', paginagions)
@@ -666,6 +667,7 @@ class ParserBamberBy:
         """
         await self.get_delay(1, 3)
         type(self).URL_COUNTER += 1
+        print(f"[{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
         try:
             async with session.get(url, headers=self._get_header()) as response:
                 soup = self.get_soup(await response.read())
@@ -674,7 +676,7 @@ class ParserBamberBy:
                 type(self).DATA_FOR_CSV.append(
                     self.get_data(soup, url, car_brand, car_model, group, chapter)
                 )
-                print(f"\t[{self.URL_COUNTER}][SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
+                print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
             type(self).ERRORS.setdefault('get_data_from_page', {}).setdefault(f"{url_index}. {url}", tuple(e.args))
             type(self).ERRORS_URLS.add(url)
@@ -718,11 +720,11 @@ class ParserBamberBy:
             type(self).ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH}/all_goods_urls.json', isjson=True)
             if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
                 os.remove(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv")
-        chunks = self.get_chunks(self.ALL_GOODS_URLS, 100)
-        len_chunks = len(chunks)
+        chunks = self.get_chunks(self.ALL_GOODS_URLS, 200)
+        # len_chunks = len(chunks)
         for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
-            print(f'{"\t" * 10} Chunk #{chunk_id}/{len_chunks}')
+            print(f'{"\t" * 10} Chunk #{chunk_id}')
             print('-' * 100)
             asyncio.run(
                 self.get_tasks_car_items(chunk_data)
