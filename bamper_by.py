@@ -364,7 +364,7 @@ class ParserBamberBy:
             await self._parsing_urls_from_soup(session, url, url_index, car_brand, car_model, is_list_headers=True)
             print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
-            type(self).ERRORS.setdefault('get_list_car_brands_url', {}).setdefault(f"{url}", tuple(e.args))
+            type(self).ERRORS.setdefault('get_list_car_brands_url', {}).setdefault(f"{url}", e.args)
             type(self).ERRORS_URLS.add(url)
             print(f"\t[ERROR id {url_index}] ОШИБКА! ")
 
@@ -475,7 +475,7 @@ class ParserBamberBy:
                     print(f"\t[SUCCESS id {url_index}] [PAGE: {PREVIOUS_ACTIVE_PAGE}] ДАННЫЕ СОБРАНЫ ПО: {url}")
 
             except Exception as e:
-                type(self).ERRORS.setdefault('get_all_goods_from_page', {}).setdefault(f"{url}", tuple(e.args))
+                type(self).ERRORS.setdefault('get_all_goods_from_page', {}).setdefault(f"{url}", e.args)
                 type(self).ERRORS_URLS.add(url)
                 print(f"\t[ERROR id {url_index}] ОШИБКА! {e.args}")  # TODO ERRORS
 
@@ -678,7 +678,7 @@ class ParserBamberBy:
                 )
                 print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
-            type(self).ERRORS.setdefault('get_data_from_page', {}).setdefault(f"{url_index}. {url}", tuple(e.args))
+            type(self).ERRORS.setdefault('get_data_from_page', {}).setdefault(f"{url_index}. {url}", e.args)
             type(self).ERRORS_URLS.add(url)
             print(f"\t[ERROR id {url_index}] ОШИБКА! ")
 
@@ -743,7 +743,7 @@ class ParserBamberBy:
             type(self).URL_COUNTER = 0
             # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении данных о товаре
             #     break
-        self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
+            self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
 
     def run_all_tasks(self) -> None:
         """
