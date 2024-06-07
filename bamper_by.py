@@ -720,7 +720,7 @@ class ParserBamberBy:
             type(self).ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH}/all_goods_urls.json', isjson=True)
             if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
                 os.remove(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv")
-        chunks = self.get_chunks(self.ALL_GOODS_URLS, 200)
+        chunks = self.get_chunks(self.ALL_GOODS_URLS, 150)
         # len_chunks = len(chunks)
         for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
