@@ -4,6 +4,8 @@ import json
 import os
 import sys
 import time
+import re
+
 import aiohttp
 import requests
 from pprint import pprint
@@ -18,28 +20,28 @@ from datetime import datetime
 
 
 class ParserBamberBy:
+    """
+    Парсер всех найденных позиций на сайте bamper.by.
+    Парсинг начинается со ссылки BASE_URLS_CATEGORIES = 'https://bamper.by/catalog/modeli/'
+    """
     BASE_URL = 'https://www.bamper.by'
-    # BASE_URLS_CATEGORIES = 'https://bamper.by/catalog/zapchasti/'
     BASE_URLS_CATEGORIES = 'https://bamper.by/catalog/modeli/'
-    # PARSER_URL = 'https://bamper.by/zapchast_elektrogidrousilitel-rulya/8792-1084241/'
+    ALL_CAR_URL_LIST = []
+    # DEFAULT_ ... пути для файлов
     DEFAULT_URL_PATH = "data/urls"
+    DEFAULT_URL_PATH_CSV = "data/result"
     DEFAULT_URL_PATH_ERRORS = f"data/urls/errors"
     DEFAULT_URL_PATH_CONTINUES = f"data/urls/continues"
+    DEFAULT_TEST_URL_PATH = "data/test"  # TODO TEST каталог для тестовых файлов
 
-
-    LINKS = []
     HEADERS = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'User-Agent': UserAgent().random,
     }
-    TASKS = []
-    URLS_WITH_CAR_BRAND = []
-    URLS_WITH_CAR_MODEL = []
-    ALL_GOODS_URLS = []
 
-    DATA_FOR_CSV = []
-    RESULT_CSV = []
     CSV_FIELDNAMES = (
+        'Производитель',
+        'Модель',
         'Группа',
         'Раздел',
         'Артикул',
@@ -50,18 +52,45 @@ class ParserBamberBy:
         'Валюта',
         'Город',
         'Объем двигателя',
+        'Ссылки на фото',
     )
 
-    ERRORS = {}
-    ERRORS_URLS = set()
-    PREVIOUS_ACTIVE_PAGE = ''
-    URL_COUNTER = 0
+    def __init__(self):
+        self.TASKS = []
+
+        # для сбора данных
+        self.URLS_WITH_ATTRS_GROUPS = []
+        self.ALL_GOODS_URLS = []
+
+        # для работы с CSV/json
+        self.DATA_FOR_CSV = []
+        self.RESULT_CSV = []
+
+        self.ERRORS = {}
+        self.ERRORS_URLS = set()
+        self.URL_COUNTER = 0
 
     @staticmethod
-    def _get_header():
+    def _get_length_dict(obj: dict) -> int:
+        """
+        Получение общего количества ссылок. Работает с определенной вложенностью словаря dict
+        """
+        result = 0
+        for chapter in obj.values():
+            for row in chapter.values():
+                result += len(row)
+        return result
+
+    @staticmethod
+    def _get_length_iterable(obj: list | tuple) -> int:
+        return len(obj)
+
+    @staticmethod
+    def _get_header() -> dict:
         """
         Используется для рандомизации headers в запросах
-        :return: заголовки
+
+        :return: заголовки/dict
         """
         return {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -69,40 +98,85 @@ class ParserBamberBy:
         }
 
     @staticmethod
-    def check_dirs(path, check_file=False):
+    def _check_dirs(path: str, check_file: bool = False) -> bool | None:
+        """
+        Используется для проверки наличия пути. Или проверки наличия файла(при check_file=True)
+
+        :path:  При check_file=False - проверяет, существуют ли каталоги, если каких-то нету, то их создает, метод возвращает None
+                При check_file=True - проверяет, существует ли указанный файл, если существует возвращает True, иначе False
+        :result: True|False|None
+        """
         if check_file:
-            return os.path.exists(path)
+            return os.path.exists(path) and os.path.isfile(path)
         if not os.path.exists(path):
             os.makedirs(path)
 
     @staticmethod
-    def write_to_json(path, filename=None, data=None, isadd=False):
-        if not filename or not data:
-            print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
-        else:
-            __class__.check_dirs(path)
-            if (ischeck_file := __class__.check_dirs(f"{path}/{filename}", check_file=True)):
+    def _delete_old_files(path: str) -> None:
+        """
+        Удаление файлов в каталоге data/urls:
+
+            main_urls.txt;
+            rls_with_attrs_groups.json;
+            all_goods_urls.json;
+            all_data_items.json
+        """
+        if os.path.exists(path):
+            files_list = os.listdir(path)
+            for file in files_list:
+                if os.path.isfile(os.path.join(path, file)):
+                    os.remove(os.path.join(path, file))
+
+    @staticmethod
+    def _write_to_json(path: str, filename: str = None, data: dict = None, isadd: bool = False) -> None:
+        """
+        Запись данных в json
+
+        :path путь до файла
+        :filename имя файла до которого указан путь в path
+        :data Словарь с данными
+        :isadd default=False - Если False - создается новый файл или перезаписывается предыдущий.
+                                Если True - данные дозаписываются в уже существующий файл
+        :return None
+        """
+        if filename and data:
+            __class__._check_dirs(path)
+            if (ischeck_file := __class__._check_dirs(f"{path}/{filename}", check_file=True)):
                 old_data = json.load(open(f"{path}/{filename}", 'r', encoding='utf-8-sig'))
             with open(f"{path}/{filename}", 'w', encoding='utf-8-sig') as f_json:
-                if isadd and ischeck_file:
-
-                    old_data.extend(
-                        data
-                    )
+                if isadd and ischeck_file and old_data:
+                    if isinstance(old_data, list):
+                        old_data.extend(
+                            data
+                        )
+                    elif isinstance(old_data, dict):
+                        old_data.update(
+                            data
+                        )
                     json.dump(old_data, f_json, indent=4, ensure_ascii=False)
                 else:
                     json.dump(data, f_json, indent=4, ensure_ascii=False)
 
             print(f'[INFO] File "{path}/{filename}" is create\n')
+        else:
+            print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
 
     @staticmethod
-    def write_to_file(path, filename=None, data=None, workmode='w'):
-        __class__.check_dirs(path)
+    def _write_to_file(path: str, filename: str = None, data: list | tuple = None, workmode: str = 'w') -> None:
+        """
+        Запись данных в txt
 
+        :path путь до файла
+        :filename имя файла до которого указан путь в path
+        :data Словарь с данными
+        :isadd default=False - Если False - создается новый файл или перезаписывается предыдущий.
+                                Если True - данные дозаписываются в уже существующий файл
+        :return None
+        """
         if filename and data:
+            __class__._check_dirs(path)
             with open(f"{path}/{filename}", mode=workmode,
                       encoding='utf-8-sig') as f:  # кодировка UTF-8-sig в ней MSexcel и другие(WPS, libre) распознают русские буквы
-                # ??? CSV
                 for row in data:
                     print(row, file=f)
             print(f'[INFO] File "{path}/{filename}" is create\n')
@@ -110,245 +184,406 @@ class ParserBamberBy:
             print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
 
     @staticmethod
-    def write_to_csv(path, filename=None, data=None):
-        __class__.check_dirs(path)
+    def _write_to_csv(path: str, filename: str = None, data: dict = None) -> None:
+        """
+        Запись данных в csv
 
-        with open(f"{path}/{filename}", 'w', encoding='utf-8-sig') as f_json:
-            if filename and data:
-
-                with open(f"{path}/{filename}", mode='w', encoding='utf-8-sig', newline='') as f_csv:
-                    writer = csv.DictWriter(f_csv, fieldnames=__class__.CSV_FIELDNAMES, delimiter=';')
+        :path путь до файла
+        :filename имя файла до которого указан путь в path
+        :data Словарь с данными
+        :return None
+        """
+        if filename and data:
+            __class__._check_dirs(path)
+            file_found = __class__._check_dirs(path, check_file=True)
+            with open(f"{path}/{filename}", mode='a' if file_found else 'w', encoding='utf-8-sig', newline='') as f_csv:
+                writer = csv.DictWriter(f_csv, fieldnames=__class__.CSV_FIELDNAMES, delimiter=';')
+                if not file_found:
                     writer.writeheader()
-                    writer.writerows(data)
-            else:
-                print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
+                writer.writerows(data)
+        else:
+            print(f'\t[INFO] File is not create!\t\tdata:"{data}"\n\t\tfilename: "{path}/{filename}"')
 
     @staticmethod
-    def read_file(path):
-        __class__.check_dirs(path, check_file=True)
+    def _read_file(path: str, isjson: bool = False) -> None:
+        """
+        Чтение данных из txt или json
+
+        :path путь до файла
+        :isjson Если False - чтение будет из txt. Если True, то чтение из json
+        :return None
+        """
+        __class__._check_dirs(path, check_file=True)
 
         with open(path, 'r', encoding='utf-8-sig') as f:
+            if isjson:
+                return json.load(f)
             return (row.strip() for row in f.readlines())
 
     @staticmethod
-    def get_active_page(soup):
-        return soup.find('div', class_='pagination-bar').find('li', class_='active').text
+    def _get_active_page(soup: BeautifulSoup) -> str:
+        """
+        Метод для получения номера активной страницы
+
+        soup: BeautifulSoup
+        """
+        return soup.find('div', class_='pagination-bar').find('li', class_='active').text.strip()
 
     @staticmethod
-    def check_pagination(soup):
-        if (pagination_bar := soup.find('div', class_='pagination-bar').find('a', class_='modern-page-next')):
-            return pagination_bar.get('href')
-        else:
+    def _check_pagination(soup: BeautifulSoup) -> str:
+        """
+        Проверка наличия пагинации
+
+        soup: BeautifulSoup
+        """
+        # TODO добавлен try
+        try:
+            if (pagination_bar := soup.find('div', class_='pagination-bar').find('a', class_='modern-page-next')):
+                return pagination_bar.get('href')
+            else:
+                return '1 страница'
+        except:
             return '1 страница'
 
     @staticmethod
-    def get_datetime(split=False):
+    def _get_datetime(split: bool = False) -> str | list:
+        """
+            получение даты и времени. При необходимости(split=True) отделение даты от вермени
+        """
         result = datetime.now().strftime("%d.%m.%Y_%H.%M.%S")
         if split:
             return result.split('_')[0]
         return result
 
-    def get_main_urls(self, url):
+    def get_main_urls(self, url: str) -> list:
         """
          get urls list from main page:  self.BASE_URLS_CATEGORIES
-        :param url:
-        :return:
+
+        :param url: сюда передается первая ссылка с которой начинается поиск
+        :return: возвращает словарь с брендом - моделью - списком ссылок на модели
         """
         result = []
+        car_brand = ''
+        pattern_car_model = fr"(?<={car_brand}-).+"
         response = requests.get(url, headers=self._get_header()).text
         soup = BeautifulSoup(response, 'html.parser')
-        for row in soup.find('div', class_='relative').find_all('ul', class_='cat-list'):
-            for row_row in row.find_all('li'):
+        list_of_data_to_be_processed = soup.find('div', class_='inner-box relative').find_all('div', class_='col-md-12')
+        # soup.find('div', class_='inner-box relative').find_all('ul', class_='cat-list')
+        for row in list_of_data_to_be_processed:
+            car_brand = row.find('h3').text.strip()
+            for row_row in row.find('div', class_='row').find_all('a'):
+                car_model = row_row.find('b').text.strip()
+                car_model_without_brand = re.search(pattern_car_model, car_model).group(0)
+                # for row_row in row.find_all('li'):
                 result.append(
-                    self.BASE_URL + row_row.find('a').get('href')
+                    [
+                        car_brand,
+                        car_model_without_brand,
+                        self.BASE_URL + row_row.get('href')
+                    ]
+
                 )
 
         return result
 
-    def get_soup(self, response):
+    def get_soup(self, response: requests) -> BeautifulSoup:
+        """
+        Получение объекта BeautifulSoup для дальнейшего поиска элементов страницы
+        """
         soup = BeautifulSoup(response, 'html.parser')
         return soup
 
-    def get_urls_from_soup(self, soup):
-        result_urls = []
-        # for row in soup.find('div', class_='inner-box relative').find_all('ul', class_='cat-list'):
-        for row in soup.find('div', class_='relative').find_all('a'):
-            result_urls.append(
-                # self.BASE_URL + link.get('href')
-                self.BASE_URL + row.get('href')
-            )
-        return result_urls
+    # def get_urls_from_soup(self, soup):
+    #     result_urls = []
+    #     # for row in soup.find('div', class_='inner-box relative').find_all('ul', class_='cat-list'):
+    #     for row in soup.find('div', class_='relative').find_all('a'):
+    #         result_urls.append(
+    #             # self.BASE_URL + link.get('href')
+    #             self.BASE_URL + row.get('href')
+    #         )
+    #     return result_urls
 
-    async def get_delay(self, start, stop):
+    def get_urls_from_soup(self, soup: BeautifulSoup, car_brand: str, car_model: str) -> None:
+        """
+        Получает ссылки из объекта BeautifulSoup. Добавляет их в атрибут класса URLS_WITH_ATTRS_GROUPS
+        """
+        group = None
+        # chapter = None
+        for row in soup.find('div', class_='relative').find_all('li'):
+            # print(row.text)
+            row_text = row.text.strip()
+            if 'list-header' in row.get('class', ''):
+                group = row_text
+                continue
+            chapter = row_text
+            self.URLS_WITH_ATTRS_GROUPS.append(
+                [
+                    car_brand,
+                    car_model,
+                    group,
+                    chapter,
+                    self.BASE_URL + row.find('a').get('href')
+                ]
+            )
+
+    async def get_delay(self, start: int, stop: int) -> None:
+        """
+        Вносит рандомную задержку. Для пайзы в работе скрипта между запросами.
+
+        :start начало для диапазона из которого выбирается время паузы
+        :stop окончание для диапазона из которого выбирается время паузы
+        """
         await asyncio.sleep(randrange(start, stop))
 
-    def get_chunks(self, obj, shift):
-        return (obj[i:i + shift] for i in range(0, len(obj), shift))
+    def get_chunks(self, obj: list | tuple, chunk_length: int) -> list | tuple:
+        """
+        Делит большой итерируемый объект на более маленькие для удобства обработыки
+        """
 
-    async def _parsing_urls_from_soup(self, session, url, url_index):
-        print(f"[INFO id {url_index}] Сбор данных по {url}")
+        return (obj[i:i + chunk_length] for i in range(0, len(obj), chunk_length))
+
+    async def _parsing_urls_from_soup(self, session: aiohttp.ClientSession, url: str, url_index: int, car_brand: str,
+                                      car_model: str,
+                                      is_list_headers: bool = False) -> None:
+        """
+        Отправляет запрос к url и ответ передает в метод get_soup, результат которого передается в
+        метод get_urls_from_soup.
+        """
+        self.URL_COUNTER += 1
+        print(f"[{self.URL_COUNTER}][INFO id {url_index}] Сбор данных по {url}")
         async with session.get(url, headers=self._get_header()) as response:
             soup = self.get_soup(await response.read())
-            return self.get_urls_from_soup(soup)
+            self.get_urls_from_soup(soup, car_brand, car_model)
 
-    async def get_list_car_brands_url(self, session, url, url_index):  # url это ссылка с self.BASE_URLS_CATEGORIES
-        await self.get_delay(1, 2)
+    async def get_list_attr_groups_url(self, session: aiohttp.ClientSession, url: str,
+                                       url_index: int, car_brand: str,
+                                       car_model: str) -> None:  # url это ссылка с self.BASE_URLS_CATEGORIES
+        """
+            получение списка групп, разделов и ссылок на сами товары
+        """
+        await self.get_delay(2, 3)
         try:
-            data = await self._parsing_urls_from_soup(session, url, url_index)
-        except Exception as e:
-            data = ''
-            self.ERRORS.setdefault('get_list_car_brands_url', {}).setdefault(f"{url_index}. {url}", tuple(e.args))
-            self.ERRORS_URLS.add(url)
-        if data:
-            self.URLS_WITH_CAR_BRAND.extend(
-                data
-            )
+            await self._parsing_urls_from_soup(session, url, url_index, car_brand, car_model, is_list_headers=True)
             print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
-        else:
+        except Exception as e:
+            self.ERRORS.setdefault('get_list_car_brands_url', {}).setdefault(f"{url}", e.args)
+            self.ERRORS_URLS.add(url)
             print(f"\t[ERROR id {url_index}] ОШИБКА! ")
 
-    async def get_list_car_models_url(self, session, url, url_index):
-        with open('text.txt', 'a', encoding='utf-8-sig') as f:
-            print(url, file=f)
-        await self.get_delay(1, 2)
-        try:
-            data = await self._parsing_urls_from_soup(session, url, url_index)
-        except Exception as e:
-            data = ''
-            self.ERRORS.setdefault('get_list_car_models_url', {}).setdefault(f"{url_index}. {url}", tuple(e.args))
-            self.ERRORS_URLS.add(url)
-        if data:
-            self.URLS_WITH_CAR_MODEL.extend(
-                data
-            )
-            print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
-        else:
-            print(f"\t[ERROR id {url_index}] ОШИБКА! ")
-
-    async def get_tasks_car_brands(self):
-        self.GOODS_ALL_URL_LIST = self.get_main_urls(self.BASE_URLS_CATEGORIES)
-        # self.write_to_file(self.DEFAULT_URL_PATH, 'main_url.txt', self.GOODS_ALL_URL_LIST)  # файл для теста(проверка урлов брендов)
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
-            for url_index, url in enumerate(self.GOODS_ALL_URL_LIST, 1):
-                self.TASKS.append(
-                    asyncio.create_task(self.get_list_car_brands_url(session, url, url_index))
-                )
-            await asyncio.gather(*self.TASKS)
-
-    def run_car_brands_tasks(self):
-        asyncio.run(
-            self.get_tasks_car_brands()
-        )
-        self.write_to_file(self.DEFAULT_URL_PATH, 'urls_with_car_brands.txt', self.URLS_WITH_CAR_BRAND, workmode='w')
-        self.write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_car_brands.json', self.ERRORS)
-        self.write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_URLS_car_brands.txt', self.ERRORS_URLS, workmode='w')
-
-        self.ERRORS.clear()
-        self.ERRORS_URLS.clear()
-
-    async def get_tasks_car_models(self, chunk):
+    async def get_tasks_attrs_groups(self, chunk_data: list[list]) -> None:
+        """
+        Полчает на вход чанк(итерируемый объект) по его ссылкам формирует таски используя метод get_list_attr_groups_url
+        """
         self.TASKS.clear()
-        print(f'[INFO] Формирование задач для начала сбора url моделей...')
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
-            for url_index, url in enumerate(chunk):
+            for url_index, car_data in enumerate(chunk_data, 1):
+                car_brand = car_data[0]
+                car_model = car_data[1]
+                url = car_data[2]
                 self.TASKS.append(
-                    asyncio.create_task(
-                        self.get_list_car_models_url(session, url, url_index)
-                    )
+                    asyncio.create_task(self.get_list_attr_groups_url(session, url, url_index, car_brand, car_model))
                 )
-
+                # break  # TODO TEST на одной изначальной ссылке КОММЕНТИТЬ!!!
             await asyncio.gather(*self.TASKS)
 
-    def run_car_model_tasks(self):
-        if not type(self).URLS_WITH_CAR_BRAND:
-            type(self).URLS_WITH_CAR_BRAND = tuple(self.read_file('data/urls/urls_with_car_brands.txt'))
-            chunks = self.get_chunks(self.URLS_WITH_CAR_BRAND, 100)
-        for chunk in chunks:
-            asyncio.run(
-                self.get_tasks_car_models(chunk)
-            )
-            self.write_to_file(self.DEFAULT_URL_PATH, 'urls_with_car_models.txt', self.URLS_WITH_CAR_MODEL,
-                               workmode='a')
-            self.write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_car_models.json', self.ERRORS, isadd=True)
-            self.write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_URLS_car_models.txt', self.ERRORS_URLS,
-                               workmode='a')
+    def run_attrs_groups_tasks(self) -> None:
+        """
+        метод запускающий на выполнение сформированные задачи в get_tasks_attrs_groups
+        Так же сохраняет результаты собранных данных и ошибок в отдельные файлы.
+        В конце очищает атрибуты класса где хранятся ошибки (ERRORS, ERRORS_URLS)
+        """
+        print(f"{'=' * 50}\nНачат сбор урлов всех моделей авто:\n{'=' * 50}")
+        self.ALL_CAR_URL_LIST.extend(
+            self.get_main_urls(self.BASE_URLS_CATEGORIES)
+        )
+        self._write_to_json(self.DEFAULT_URL_PATH, 'main_urls.json',
+                            data=self.ALL_CAR_URL_LIST)
 
+        chunks = self.get_chunks(self.ALL_CAR_URL_LIST,
+                                 200)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
+        # len_chunks = len(chunks)
+        for chunk_id, chunk_data in enumerate(chunks):
+            print('-' * 100)
+            print(f'{"\t" * 10} Chunk id: #{chunk_id}')
+            print('-' * 100)
+            asyncio.run(
+                self.get_tasks_attrs_groups(chunk_data)
+            )
+
+            self._write_to_json(self.DEFAULT_URL_PATH, 'urls_with_attrs_groups.json', self.URLS_WITH_ATTRS_GROUPS,
+                                isadd=True)
+            self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+                                f'ERRORS_attrs_groups.json',
+                                self.ERRORS, isadd=True)
+            self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+                                f'ERRORS_URLS_attrs_groups.txt', self.ERRORS_URLS, workmode='a')
+            # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на модели авто
+            #     break
         self.ERRORS.clear()
         self.ERRORS_URLS.clear()
 
-    async def get_all_goods_from_page(self, session, url, url_index):
-        await self.get_delay(1, 3)
+    async def get_all_goods_from_page(self,
+                                      session: aiohttp.ClientSession,
+                                      url: str,
+                                      url_index: int,
+                                      car_brand: str,
+                                      car_model: str,
+                                      group: str,
+                                      chapter: str,
+                                      obj_id:int) -> None:
+        """
+        Метод получающий все позиции с загруженной странице по адресу url.
+            после поиска  url'ов товаров на странице они доабвляются в атрибут класса ALL_GOODS_URLS
+        session: aiohttp.ClientSession
+        url: url - загружаемая ссылка
+        url_index: int индекс url в пределах chunk'a
+        group: str - название группы запчастей
+        chapter: str - название раздела запчастей
+
+        """
+        await self.get_delay(2, 3)
         self.URL_COUNTER += 1
-        print(f"[{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
-        flag = True
-        # istime = False
-        while flag:
-            # if datetime.now().time().strftime("%H:%M:%S") == "08:58:59":
-            #     istime = True
-            #     break
+        PREVIOUS_ACTIVE_PAGE = ''  # переменная только для этой функции get_all_goods_from_page()
+        print(f"[OBJ id {obj_id}][{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
+        start = True
+        while start:
+            await self.get_delay(2, 3)
             try:
                 async with session.get(url, headers=self._get_header()) as response:
                     soup = self.get_soup(await response.read())
+                    if PREVIOUS_ACTIVE_PAGE == self._get_active_page(soup):
+                        start = False
+                        # print(f"ID {url_index}", PREVIOUS_ACTIVE_PAGE, url)
+                        continue
                     for row_index, row in enumerate(
                             soup.find('div', class_='list-wrapper').find_all('div', class_='add-image'), 1):
                         self.ALL_GOODS_URLS.append(
-                            self.BASE_URL + row.find('a').get('href')
+                            [
+                                car_brand,
+                                car_model,
+                                group,
+                                chapter,
+                                self.BASE_URL + row.find('a').get('href')
+                            ]
                         )
-                    paginagions = self.check_pagination(soup)
-                    print('\t\t\t\t', paginagions)
-                    if paginagions != '1 страница':
-                        if self.BASE_URLS_CATEGORIES == self.get_active_page(soup):
-                            flag = False
-                            continue
-                        url = self.BASE_URL + paginagions
-                        self.PREVIOUS_ACTIVE_PAGE = self.get_active_page(soup)
-                    else:
-                        flag = False
-                    print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
-            except Exception as e:
-                self.ERRORS.setdefault('get_all_goods_from_page', {}).setdefault(f"{url_index}. {url}", tuple(e.args))
-                self.ERRORS_URLS.add(url)
-                print(f"\t[ERROR id {url_index}] ОШИБКА! ")
-        # if istime:
-        #     return
 
-    async def get_tasks_car_goods(self, chunk):
+                    paginagions = self._check_pagination(soup)
+
+                    # print('\t\t\t\t', paginagions)
+                    if paginagions != '1 страница':
+                        url = self.BASE_URL + paginagions
+                        PREVIOUS_ACTIVE_PAGE = self._get_active_page(soup)
+                    else:
+                        PREVIOUS_ACTIVE_PAGE = self._get_active_page(soup)
+                        start = False
+                    print(f"\t[OBJ id {obj_id}][SUCCESS id {url_index}] [PAGE: {PREVIOUS_ACTIVE_PAGE}] ДАННЫЕ СОБРАНЫ ПО: {url}")
+
+            except Exception as e:
+                self.ERRORS.setdefault('get_all_goods_from_page', {}).setdefault(f"{url}", e.args)
+                self.ERRORS_URLS.add(url)
+                print(f"\t[OBJ id {obj_id}][ERROR id {url_index}] ОШИБКА! {e.args}")  # TODO ERRORS
+
+    async def get_tasks_car_goods(self, chunk_data: list | tuple, obj_id) -> None:
+        """
+        метод для формирования задач по получению ссылок на товары.
+
+        chunk: итерируемый объект в котором модели авто
+        group: str - название группы запчастей
+        chapter: str - название раздела запчастей
+
+        """
         self.TASKS.clear()
-        print(f'[INFO] Формирование задач для начала сбора url товаров...')
+        print(f'[{obj_id}][INFO] Формирование задач для начала сбора url товаров...')
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
-            # for url_index, url in enumerate(self.URLS_WITH_CAR_MODEL, 1):
-            for url_index, url in enumerate(chunk, 1):
+            for url_index, data in enumerate(chunk_data, 1):
+                car_brand = data[0]
+                car_model = data[1]
+                group = data[2]
+                chapter = data[3]
+                url = data[4]
                 self.TASKS.append(
                     asyncio.create_task(
-                        self.get_all_goods_from_page(session, url, url_index)
+                        self.get_all_goods_from_page(session, url, url_index, car_brand, car_model, group, chapter, obj_id)
                     )
                 )
+
             await asyncio.gather(*self.TASKS)
 
-    def run_car_item_tasks(self):
-        if not type(self).URLS_WITH_CAR_MODEL:
-            type(self).URLS_WITH_CAR_MODEL = tuple(self.read_file('data/urls/urls_with_car_models.txt'))
-            chunks = self.get_chunks(self.URLS_WITH_CAR_MODEL, 100)
-        for chunk_num, chunk_urls in enumerate(chunks):
+    def run_car_item_tasks(self, obj_id) -> None:
+        """
+        Запускает задачи на выполнение по сбору ссылок на товары. Так же если скрипт тестируется,
+        то предусмотрена загрузка данных в атрибут класса URLS_WITH_ATTRS_GROUPS из файла 'data/urls/urls_with_attrs_groups.json'
+
+        так же сохраняет собранные данные и ошибки в отдельные файлы. Сохранение происходит по чанкам. Последующие
+        данные других чанков записываются в конец файла созданного при обработке первого чанка
+        """
+        if not self.URLS_WITH_ATTRS_GROUPS:
+            self.URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
+        chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS,
+                                 chunk_length=200)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
+        # len_chunks = len(chunks)
+        for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
-            print(f'{"\t" * 10} Chunk #{chunk_num}')
+            print(f'{"\t" * 10}[{obj_id}] Chunk id: #{chunk_id}')
             print('-' * 100)
+
             asyncio.run(
-                self.get_tasks_car_goods(chunk_urls)
+                self.get_tasks_car_goods(chunk_data, obj_id)
             )
-            self.write_to_file(self.DEFAULT_URL_PATH, 'all_goods_urls.txt', self.ALL_GOODS_URLS, workmode='a')
-            self.write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_goods_urls.json', self.ERRORS, isadd=True)
-            self.write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_URLS_goods_urls.txt', self.ERRORS_URLS,
-                               workmode='a')
-            self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'urls_with_car_models.txt', self.URLS_WITH_CAR_MODEL[(chunk_num+1) * 100:], workmode='a')
-        type(self).URL_COUNTER = 0
 
-        self.ERRORS.clear()
-        self.ERRORS_URLS.clear()
+            self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+                                f'ERRORS_goods_urls.json', self.ERRORS, isadd=True)
+            self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+                                f'ERRORS_URLS_goods_urls.txt', self.ERRORS_URLS,
+                                workmode='a')
+            self.ERRORS.clear()
+            self.ERRORS_URLS.clear()
+            # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на сами объявдения
+            #     break
+        self._write_to_json(self.DEFAULT_URL_PATH, 'all_goods_urls.json', self.ALL_GOODS_URLS, isadd=True)
+        self.URL_COUNTER = 0
+        self.URLS_WITH_ATTRS_GROUPS.clear()
 
-    def get_data(self, soup, url):
+    def get_data(self,
+                 soup: BeautifulSoup,
+                 url: str,
+                 car_brand: str,
+                 car_model: str,
+                 group: str,
+                 chapter: str) -> dict:
+        """
+        Метод получения данных со страницы самого товара
+
+        soup: BeautifulSoup - объект из которого берутся данные
+        url: url - использовался только при тестах для добавления в итоговый результат
+        group: str - название группы запчастей
+        chapter: str - название раздела запчастей
+
+        return: возвращает словарь с данными вида:
+            {
+                # 'url': url,
+                'Группа': group,
+                'Раздел': chapter,
+                'Артикул': vendor_code,
+                'Название': item_name,
+                'Примечание': item_comment,
+                'Номер запчасти': item_number,
+                'Цена': price,
+                'Валюта': units,
+                'Город': city,
+                'Объем двигателя': engine_v,
+                'Ссылки на фото',
+            }
+
+        """
         result = {}
-        # soup = BeautifulSoup(response.content, 'lxml')
+
+        image_urls = []
+        data_of_image_urls = soup.find('div', class_='detail-image').find_all('img')
+        for url in data_of_image_urls:
+            image_urls.append(
+                self.BASE_URL + url['src'])
+
         item_name = soup.find('h1', class_='auto-heading onestring').find('span').text.strip()
         try:
             price = soup.find('h1', class_='auto-heading onestring').find('meta', itemprop='price').get('content')
@@ -387,12 +622,9 @@ class ParserBamberBy:
         city = soup.find('div', class_='panel sidebar-panel panel-contact-seller hidden-xs hidden-sm').find('div',
                                                                                                             class_='seller-info').find_all(
             'p')[0].text.split()[-1].strip()
-        chapter = ''
-        group = soup.find('h1', class_='auto-heading onestring').find('span').find('b').text.strip()
-        # group = (url.get('href') for url in soup.find('div', id='js-breadcrumbs').find_all('a')[-2:])
-        # group = soup.find('div', id='col-sm-9 automobile-left-col')
-        # print('\t\t\t\t\t', group)
+
         engine_v = 'не указан'
+
         if (a := soup.find('div', style="font-size: 17px;")):
             for r in a.text.split(','):
                 r = r.strip()
@@ -403,8 +635,10 @@ class ParserBamberBy:
         result.update(
             {
                 # 'url': url,
-                'Раздел': chapter,
+                'Производитель': car_brand,
+                'Модель': car_model,
                 'Группа': group,
+                'Раздел': chapter,
                 'Артикул': vendor_code,
                 'Название': item_name,
                 'Примечание': item_comment,
@@ -413,101 +647,211 @@ class ParserBamberBy:
                 'Валюта': units,
                 'Город': city,
                 'Объем двигателя': engine_v,
+                'Ссылки на фото': ','.join(image_urls) if image_urls else 'Изображение не найдены',
             }
         )
         return result
 
-    async def get_data_from_page(self, session, url, url_index):
+    async def get_data_from_page(self,
+                                 session: aiohttp.ClientSession,
+                                 url: str,
+                                 url_index: int,
+                                 car_brand: str,
+                                 car_model: str,
+                                 group: str,
+                                 chapter: str,
+                                 obj_id:int) -> None:
+        """
+        Метод получающий объект BeautifulSoup по указанному url, запускающий сбор данных со страницы
+        После записывающий в атрибут класса DATA_FOR_CSV.
+
+        session: объект сессии aiohttp.ClientSession
+        url: url для поиска
+        url_index: int индекс url в пределах chunk'a
+        group: str - название группы запчастей
+        chapter: str - название раздела запчастей
+        return: None
+        """
         await self.get_delay(1, 3)
         self.URL_COUNTER += 1
+        print(f"[OBJ id {obj_id}][{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
         try:
             async with session.get(url, headers=self._get_header()) as response:
                 soup = self.get_soup(await response.read())
-                if (a:=soup.find('div', class_='row block404')):
+                if (a := soup.find('div', class_='row block404')):
                     raise ValueError(f'Error 404 - {a.text}')
                 self.DATA_FOR_CSV.append(
-                    self.get_data(soup, url)
+                    self.get_data(soup, url, car_brand, car_model, group, chapter)
                 )
-                print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
+                print(f"\t[OBJ id {obj_id}][SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
-            self.ERRORS.setdefault('get_data_from_page', {}).setdefault(f"{url_index}. {url}", tuple(e.args))
+            self.ERRORS.setdefault('get_data_from_page', {}).setdefault(f"{url_index}. {url}", e.args)
             self.ERRORS_URLS.add(url)
-            print(f"\t[ERROR id {url_index}] ОШИБКА! ")
+            print(f"\t[OBJ id {obj_id}][ERROR id {url_index}] ОШИБКА! {e.args}")
 
-    async def get_tasks_car_items(self, chunk_urls):
+    async def get_tasks_car_items(self, chunk_data: list | tuple, obj_id) -> None:
+        """
+            Формирование задач по сбору данных о товарах
+
+            chunk_urls: итерируемый объект в котором содержатся  url для поиска данных о товарах
+            group: str - название группы запчастей
+            chapter: str - название раздела запчастей
+
+            return: None
+
+        """
         self.TASKS.clear()
-        print(f'[INFO] Формирование задач для начала сбора url товаров...')
+        print(f'[INFO] Формирование задач для начала сбора данных о товарах...')
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
-            for url_index, url in enumerate(chunk_urls, 1):
+            for url_index, data in enumerate(chunk_data, 1):
+                car_brand = data[0]
+                car_model = data[1]
+                group = data[2]
+                chapter = data[3]
+                url = data[4]
                 self.TASKS.append(
                     asyncio.create_task(
-                        self.get_data_from_page(session, url, url_index)
+                        self.get_data_from_page(session, url, url_index, car_brand, car_model, group, chapter, obj_id)
                     )
                 )
 
             await asyncio.gather(*self.TASKS)
 
-    def run_get_data_from_page_tasks(self):
-        if not type(self).ALL_GOODS_URLS:
-            type(self).ALL_GOODS_URLS = tuple(self.read_file('all_goods_urls.txt'))
-            chunks = self.get_chunks(self.ALL_GOODS_URLS, 100)
-        for chunk_num, chunk_urls in enumerate(chunks):
+    def run_get_data_from_page_tasks(self, obj_id) -> None:
+        """
+            Запуск задач сформированных методом get_tasks_car_items
+            После сохраниение собранных данных из атрибута класса DATA_FOR_CSV в csv, а ошибок в отдельный файл
+        """
+
+        if not self.ALL_GOODS_URLS:
+            self.ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH}/all_goods_urls.json', isjson=True)
+            if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
+                os.remove(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv")
+        chunks = self.get_chunks(self.ALL_GOODS_URLS, 300)
+        # len_chunks = len(chunks)
+        for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
-            print(f'{"\t" * 10} Chunk #{chunk_num}')
+            print(f'{"\t" * 10}[{obj_id}] Chunk #{chunk_id}')
             print('-' * 100)
             asyncio.run(
-                self.get_tasks_car_items(chunk_urls)
+                self.get_tasks_car_items(chunk_data, obj_id)
             )
-            self.write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_data_items.json', self.ERRORS, isadd=True)
-            self.write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self.get_datetime(True)}", f'[{self.get_datetime()}]_ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
-                               workmode='a')
-            self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
-                               self.ALL_GOODS_URLS[(chunk_num+1) * 100:])
-            self.write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
-            break
+            self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+                                f'ERRORS_data_items.json', self.ERRORS, isadd=True)
+            self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+                                f'ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
+                                workmode='a')
+            # self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
+            #                    self.ALL_GOODS_URLS[(chunk_id + 1) * 100:])
 
-        self.write_to_csv(self.DEFAULT_URL_PATH, f'RESULT.csv', self.DATA_FOR_CSV)
-        type(self).URL_COUNTER = 0
+            # self.DATA_FOR_CSV.clear()
+            self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
 
-    def run_all_tasks(self):
+            # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении данных о товаре
+            #     break
+        self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
+        self.ERRORS_URLS.clear()
+        self.ERRORS.clear()
+        self.URL_COUNTER = 0
+
+    def run_first_task(self) -> None:
+        # self._delete_old_files(self.DEFAULT_URL_PATH)  # TODO на время тестов закомитил
+        # self._delete_old_files(self.DEFAULT_URL_PATH_CSV)  # TODO на время тестов закомитил
+
         # Эта часть ищет все ссылки брендов на каждую группу товара.
-        print(f"{'='*50}\nНачат сбор урлов брендов:\n{'='*50}")
         start = time.monotonic()
-        parser.run_car_brands_tasks()
+        self.run_attrs_groups_tasks()
         end = time.monotonic()
-        print(f"Время работы скрипта получение списка брендов({len(self.URLS_WITH_CAR_BRAND)}): {end - start} секунд. \n{'='*50}")
+        print(
+            f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд. \n{'=' * 50}")
 
         print()
+        self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+            f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",),
+                            workmode='a')
 
-        # Эта часть ищет ссылки на все модели брендов
-        # print(f"{'=' * 50}\nНачат сбор урлов моделей:\n{'=' * 50}")
+    async def run_all_tasks(self, obj_id) -> None:
+        """
+            Метод изначально удаляет старые файлы с данными(кроме файлов ошибок)
+            После поочередно запускает методы:
+                1 run_attrs_groups_tasks
+                2 run_car_item_tasks
+                3 run_get_data_from_page_tasks
+        """
+
+        #
+        #
+        # # Эта часть ищет все ссылки брендов на каждую группу товара.
         # start = time.monotonic()
-        # parser.run_car_model_tasks()
+        # self.run_attrs_groups_tasks()
         # end = time.monotonic()
         # print(
-        #     f"Время работы скрипта получение списка моделей({len(self.URLS_WITH_CAR_MODEL)}): {end - start} секунд. \n{'=' * 50}")
+        #     f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд. \n{'=' * 50}")
+        #
+        # print()
+        # self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+        #     f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",),
+        #                     workmode='a')
+
+        # Эта часть ищет ссылки на сами товары.
+        start = time.monotonic()
+        self.run_car_item_tasks(obj_id)
+        end = time.monotonic()
+        print(
+            f"[{obj_id}] Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
 
         print()
+        self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+            f"[{obj_id}]Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд.",),
+                            workmode='a')
 
-        # # Эта часть ищет ссылка на сами товары.
-        # start = time.monotonic()
-        # self.run_car_item_tasks()
-        # end = time.monotonic()
-        # print(
-        #     f"Время работы скрипта получение списка ссылок на товары({len(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
+        # Эта часть ищет данные по списку ссылок и затем сохраняет в csv
+        start = time.monotonic()
+        self.run_get_data_from_page_tasks(obj_id)
+        end = time.monotonic()
+        print(
+            f"[{obj_id}] Время работы скрипта получение данных о товарах({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
+        self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+            f"[{obj_id}]Время работы скрипта получение данных о товарах({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд.",),
+                            workmode='a')
 
-        print()
 
-        # # Эта часть ищет данны по списку ссылок и затем сохраняет в csv
-        # start = time.monotonic()
-        # self.run_get_data_from_page_tasks()
-        # end = time.monotonic()
-        # print(
-        #     f"Время работы скрипта получение списка ссылок на товары({len(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
+class MultiplyParser(ParserBamberBy):
+    PARSER_INSTANCE = []
+    TASKS = []
+
+    def create_parser_instance(self, obj: ParserBamberBy):
+        if not self.URLS_WITH_ATTRS_GROUPS:
+            self.URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
+        chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS, len(self.URLS_WITH_ATTRS_GROUPS)//100)
+        for chunk in chunks:
+            instance = obj()
+            instance.URLS_WITH_ATTRS_GROUPS = chunk
+            self.PARSER_INSTANCE.append(instance)
+
+    async def get_tasks(self):
+        import nest_asyncio
+        nest_asyncio.apply()
+        for obj_id, obj in enumerate(self.PARSER_INSTANCE, 1):
+            self.TASKS.append(
+                asyncio.create_task(
+                    obj.run_all_tasks(obj_id)
+                )
+            )
+
+        await asyncio.gather(*self.TASKS)
+
+    def run_tasks(self):
+        asyncio.run(self.get_tasks())
 
 
 if __name__ == '__main__':
-    # TODO в каталоге continues после того как файл будет пустым рассмотреть необходимость его удаления
-    parser = ParserBamberBy()
-    parser.run_all_tasks()
-
+    # TODO continue рассмотреть возможность сделать сохранение оставшихся чанков, на случай, если парсер словит исключение
+    #     которое не обработано
+    # TODO continue в каталоге continues после того как файл будет пустым рассмотреть необходимость его удаления
+    # parser = ParserBamberBy()
+    # parser.run_all_tasks()
+    parser = MultiplyParser()
+    # parser.run_first_task()
+    parser.create_parser_instance(ParserBamberBy)
+    parser.run_tasks()

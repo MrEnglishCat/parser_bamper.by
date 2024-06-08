@@ -525,18 +525,20 @@ class ParserBamberBy:
             asyncio.run(
                 self.get_tasks_car_goods(chunk_data)
             )
-            self._write_to_json(self.DEFAULT_URL_PATH, 'all_goods_urls.json', self.ALL_GOODS_URLS, isadd=True)
+
             self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
                                 f'ERRORS_goods_urls.json', self.ERRORS, isadd=True)
             self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
                                 f'ERRORS_URLS_goods_urls.txt', self.ERRORS_URLS,
                                 workmode='a')
+            type(self).ERRORS.clear()
+            type(self).ERRORS_URLS.clear()
             # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на сами объявдения
             #     break
-
+        self._write_to_json(self.DEFAULT_URL_PATH, 'all_goods_urls.json', self.ALL_GOODS_URLS, isadd=True)
         type(self).URL_COUNTER = 0
-        type(self).ERRORS.clear()
-        type(self).ERRORS_URLS.clear()
+        type(self).URLS_WITH_ATTRS_GROUPS.clear()
+
 
     def get_data(self,
                  soup: BeautifulSoup,
@@ -720,7 +722,7 @@ class ParserBamberBy:
             type(self).ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH}/all_goods_urls.json', isjson=True)
             if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
                 os.remove(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv")
-        chunks = self.get_chunks(self.ALL_GOODS_URLS, 150)
+        chunks = self.get_chunks(self.ALL_GOODS_URLS, 300)
         # len_chunks = len(chunks)
         for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
@@ -736,14 +738,16 @@ class ParserBamberBy:
                                 workmode='a')
             # self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
             #                    self.ALL_GOODS_URLS[(chunk_id + 1) * 100:])
-            self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
-            self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
 
             # type(self).DATA_FOR_CSV.clear()
-            type(self).URL_COUNTER = 0
+            self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
+
             # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении данных о товаре
             #     break
-            self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
+        self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
+        self.ERRORS_URLS.clear()
+        self.ERRORS.clear()
+        type(self).URL_COUNTER = 0
 
     def run_all_tasks(self) -> None:
         """
