@@ -248,7 +248,7 @@ class ParserBamperBy:
         """
             получение даты и времени. При необходимости(split=True) отделение даты от вермени
         """
-        result = datetime.now().strftime("%d.%m.%Y_%H.%M.%S")
+        result = datetime.now().strftime("%d.%m.%Y_%H.%M")
         if split:
             return result.split('_')[0]
         return result
@@ -394,7 +394,7 @@ class ParserBamperBy:
         type(self).ALL_CAR_URL_LIST.extend(
             self.get_main_urls(self.BASE_URLS_CATEGORIES)
         )
-        self._write_to_json(self.DEFAULT_URL_PATH, 'main_urls.json',
+        self._write_to_json(self.DEFAULT_URL_PATH, f'[{self._get_datetime(True)}',
                             data=self.ALL_CAR_URL_LIST)
 
         chunks = self.get_chunks(self.ALL_CAR_URL_LIST,
@@ -409,10 +409,10 @@ class ParserBamperBy:
             )
 
             self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                f'ERRORS_attrs_groups.json',
+                                f'[{self.get_datetime(True)}]_ERRORS_attrs_groups.json',
                                 self.ERRORS, isadd=True)
             self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                f'ERRORS_URLS_attrs_groups.txt', self.ERRORS_URLS, workmode='a')
+                                f'[{self._get_datetime(True)}]_ERRORS_URLS_attrs_groups.txt', self.ERRORS_URLS, workmode='a')
             # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на модели авто
             #     break
         self._write_to_json(self.DEFAULT_URL_PATH, 'urls_with_attrs_groups.json', self.URLS_WITH_ATTRS_GROUPS,
@@ -529,9 +529,9 @@ class ParserBamperBy:
             )
 
             self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                f'ERRORS_goods_urls.json', self.ERRORS, isadd=True)
+                                f'[{self._get_datetime(True)}]_ERRORS_goods_urls.json', self.ERRORS, isadd=True)
             self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                f'ERRORS_URLS_goods_urls.txt', self.ERRORS_URLS,
+                                f'[{self._get_datetime(True)}]_ERRORS_URLS_goods_urls.txt', self.ERRORS_URLS,
                                 workmode='a')
             type(self).ERRORS.clear()
             type(self).ERRORS_URLS.clear()
@@ -742,9 +742,9 @@ class ParserBamperBy:
                 self.get_tasks_car_items(chunk_data)
             )
             self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                f'ERRORS_data_items.json', self.ERRORS, isadd=True)
+                                f'[{self._get_datetime(True)}]_ERRORS_data_items.json', self.ERRORS, isadd=True)
             self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                f'ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
+                                f'[{self._get_datetime(True)}]_ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
                                 workmode='a')
             # self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
             #                    self.ALL_GOODS_URLS[(chunk_id + 1) * 100:])
