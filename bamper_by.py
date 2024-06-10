@@ -364,7 +364,7 @@ class ParserBamperBy:
             await self._parsing_urls_from_soup(session, url, url_index, car_brand, car_model, is_list_headers=True)
             print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
-            type(self).ERRORS.setdefault('get_list_car_brands_url', {}).setdefault(f"{url}", list(e.args))
+            type(self).ERRORS.setdefault('get_list_car_brands_url', {}).setdefault(f"{url}", str(e))
             type(self).ERRORS_URLS.add(url)
             print(f"\t[ERROR id {url_index}] ОШИБКА! {e}")
 
@@ -397,7 +397,8 @@ class ParserBamperBy:
         self._write_to_json(self.DEFAULT_URL_PATH, 'main_urls.json',
                             data=self.ALL_CAR_URL_LIST)
 
-        chunks = self.get_chunks(self.ALL_CAR_URL_LIST, 200)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
+        chunks = self.get_chunks(self.ALL_CAR_URL_LIST,
+                                 200)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
         # len_chunks = len(chunks)
         for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
@@ -406,7 +407,6 @@ class ParserBamperBy:
             asyncio.run(
                 self.get_tasks_attrs_groups(chunk_data)
             )
-
 
             self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
                                 f'ERRORS_attrs_groups.json',
@@ -476,7 +476,7 @@ class ParserBamperBy:
                     print(f"\t[SUCCESS id {url_index}] [PAGE: {PREVIOUS_ACTIVE_PAGE}] ДАННЫЕ СОБРАНЫ ПО: {url}")
 
             except Exception as e:
-                type(self).ERRORS.setdefault('get_all_goods_from_page', {}).setdefault(f"{url}", list(e.args))
+                type(self).ERRORS.setdefault('get_all_goods_from_page', {}).setdefault(f"{url}", str(e))
                 type(self).ERRORS_URLS.add(url)
                 print(f"\t[ERROR id {url_index}] ОШИБКА! {e}")  # TODO ERRORS
 
@@ -516,7 +516,8 @@ class ParserBamperBy:
         """
         if not type(self).URLS_WITH_ATTRS_GROUPS:
             type(self).URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
-        chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS, chunk_length=200)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
+        chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS,
+                                 chunk_length=200)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
         # len_chunks = len(chunks)
         for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
@@ -540,12 +541,11 @@ class ParserBamperBy:
         type(self).URL_COUNTER = 0
         type(self).URLS_WITH_ATTRS_GROUPS.clear()
 
-
     def get_data(self,
                  soup: BeautifulSoup,
                  url: str,
-                 car_brand:str,
-                 car_model:str,
+                 car_brand: str,
+                 car_model: str,
                  group: str,
                  chapter: str) -> dict:
         """
@@ -576,13 +576,20 @@ class ParserBamperBy:
         result = {}
 
         image_urls = []
-        data_of_image_urls = soup.find('div', class_='detail-image').find_all('img')
+        try:
+            data_of_image_urls = soup.find('div', class_='detail-image').find_all('img')
+        except Exception as e:
+            pass
+
         for url in data_of_image_urls:
             image_urls.append(
                 self.BASE_URL + url['src'])
-
-        item_name = soup.find('h1', class_='auto-heading onestring').find('span').text.strip()
         try:
+            item_name = soup.find('h1', class_='auto-heading onestring').find('span').text.strip()
+        except Exception as e:
+            item_name = 'Не найдено на странице'
+        try:
+
             price = soup.find('h1', class_='auto-heading onestring').find('meta', itemprop='price').get('content')
             units = soup.find('h1', class_='auto-heading onestring').find('meta', itemprop='priceCurrency').get(
                 'content')
@@ -615,10 +622,12 @@ class ParserBamperBy:
                     continue
                 except:
                     pass
-
-        city = soup.find('div', class_='panel sidebar-panel panel-contact-seller hidden-xs hidden-sm').find('div',
-                                                                                                            class_='seller-info').find_all(
-            'p')[0].text.split()[-1].strip()
+        try:
+            city = soup.find('div', class_='panel sidebar-panel panel-contact-seller hidden-xs hidden-sm').find('div',
+                                                                                                                class_='seller-info').find_all(
+                'p')[0].text.split()[-1].strip()
+        except Exception as e:
+            city = 'не указан'
 
         engine_v = 'не указан'
 
@@ -653,8 +662,8 @@ class ParserBamperBy:
                                  session: aiohttp.ClientSession,
                                  url: str,
                                  url_index: int,
-                                 car_brand:str,
-                                 car_model:str,
+                                 car_brand: str,
+                                 car_model: str,
                                  group: str,
                                  chapter: str) -> None:
         """
@@ -681,7 +690,7 @@ class ParserBamperBy:
                 )
                 print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
-            type(self).ERRORS.setdefault('get_data_from_page', {}).setdefault(f"{url_index}. {url}", list(e.args))
+            type(self).ERRORS.setdefault('get_data_from_page', {}).setdefault(f"{url_index}. {url}", str(e))
             type(self).ERRORS_URLS.add(url)
             print(f"\t[ERROR id {url_index}] ОШИБКА! {e}")
 
@@ -761,8 +770,6 @@ class ParserBamperBy:
         self._delete_old_files(self.DEFAULT_URL_PATH)
         self._delete_old_files(self.DEFAULT_URL_PATH_CSV)
 
-
-
         # Эта часть ищет все ссылки брендов на каждую группу товара.
         start = time.monotonic()
         self.run_attrs_groups_tasks()
@@ -796,7 +803,6 @@ class ParserBamperBy:
         self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
             f"Время работы скрипта получение данных о товарах({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд.",),
                             workmode='a')
-
 
 
 if __name__ == '__main__':
