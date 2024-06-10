@@ -19,7 +19,7 @@ from datetime import datetime
 # sys.stdout.reconfigure(encoding='utf-8')
 
 
-class ParserBamberBy:
+class ParserBamperBy:
     """
     Парсер всех найденных позиций на сайте bamper.by.
     Парсинг начинается со ссылки BASE_URLS_CATEGORIES = 'https://bamper.by/catalog/modeli/'
@@ -816,11 +816,11 @@ class ParserBamberBy:
                             workmode='a')
 
 
-class MultiplyParser(ParserBamberBy):
+class MultiplyParser(ParserBamperBy):
     PARSER_INSTANCE = []
     TASKS = []
 
-    def create_parser_instance(self, obj: ParserBamberBy):
+    def create_parser_instance(self, obj: ParserBamperBy):
         if not self.URLS_WITH_ATTRS_GROUPS:
             self.URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
         chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS, len(self.URLS_WITH_ATTRS_GROUPS)//5)
@@ -849,9 +849,9 @@ if __name__ == '__main__':
     # TODO continue рассмотреть возможность сделать сохранение оставшихся чанков, на случай, если парсер словит исключение
     #     которое не обработано
     # TODO continue в каталоге continues после того как файл будет пустым рассмотреть необходимость его удаления
-    # parser = ParserBamberBy()
+    # parser = ParserBamperBy()
     # parser.run_all_tasks()
     parser = MultiplyParser()
     # parser.run_first_task()
-    parser.create_parser_instance(ParserBamberBy)
+    parser.create_parser_instance(ParserBamperBy)
     parser.run_tasks()
