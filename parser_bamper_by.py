@@ -823,7 +823,7 @@ class MultiplyParser(ParserBamberBy):
     def create_parser_instance(self, obj: ParserBamberBy):
         if not self.URLS_WITH_ATTRS_GROUPS:
             self.URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
-        chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS, len(self.URLS_WITH_ATTRS_GROUPS)//100)
+        chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS, len(self.URLS_WITH_ATTRS_GROUPS)//5)
         for chunk in chunks:
             instance = obj()
             instance.URLS_WITH_ATTRS_GROUPS = chunk
