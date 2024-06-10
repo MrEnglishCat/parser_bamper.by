@@ -140,8 +140,8 @@ class ParserBamperBy:
         if filename and data:
             __class__._check_dirs(path)
             if (ischeck_file := __class__._check_dirs(f"{path}/{filename}", check_file=True)):
-                old_data = json.load(open(f"{path}/{filename}", 'r', encoding='utf-8-sig'))
-            with open(f"{path}/{filename}", 'w', encoding='utf-8-sig') as f_json:
+                old_data = json.load(open(f"{path}/{filename}", 'r', encoding='utf-8'))
+            with open(f"{path}/{filename}", 'w', encoding='utf-8') as f_json:
                 if isadd and ischeck_file and old_data:
                     if isinstance(old_data, list):
                         old_data.extend(
@@ -213,7 +213,7 @@ class ParserBamperBy:
         """
         __class__._check_dirs(path, check_file=True)
 
-        with open(path, 'r', encoding='utf-8-sig') as f:
+        with open(path, 'r', encoding='utf-8' if isjson else 'utf-8-sig') as f:
             if isjson:
                 return json.load(f)
             return (row.strip() for row in f.readlines())
