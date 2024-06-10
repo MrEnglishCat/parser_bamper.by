@@ -409,7 +409,7 @@ class ParserBamperBy:
             )
 
             self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                f'[{self.get_datetime(True)}]_ERRORS_attrs_groups.json',
+                                f'[{self._get_datetime(True)}]_ERRORS_attrs_groups.json',
                                 self.ERRORS, isadd=True)
             self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
                                 f'[{self._get_datetime(True)}]_ERRORS_URLS_attrs_groups.txt', self.ERRORS_URLS, workmode='a')
