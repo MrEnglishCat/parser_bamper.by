@@ -19,7 +19,7 @@ from datetime import datetime
 # sys.stdout.reconfigure(encoding='utf-8')
 
 
-class ParserBamberBy:
+class ParserBamperBy:
     """
     Парсер всех найденных позиций на сайте bamper.by.
     Парсинг начинается со ссылки BASE_URLS_CATEGORIES = 'https://bamper.by/catalog/modeli/'
@@ -803,5 +803,5 @@ if __name__ == '__main__':
     # TODO continue рассмотреть возможность сделать сохранение оставшихся чанков, на случай, если парсер словит исключение
     #     которое не обработано
     # TODO continue в каталоге continues после того как файл будет пустым рассмотреть необходимость его удаления
-    parser = ParserBamberBy()
+    parser = ParserBamperBy()
     parser.run_all_tasks()
