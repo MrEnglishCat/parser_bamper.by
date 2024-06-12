@@ -29,6 +29,7 @@ class ParserBamperBy:
     ALL_CAR_URL_LIST = []
     # DEFAULT_ ... пути для файлов
     DEFAULT_URL_PATH = "data/urls"
+    DEFAULT_URL_PATH_ALL_GOODS_URLS = "data/urls/all_goods_urls"
     DEFAULT_URL_PATH_CSV = "data/result"
     DEFAULT_URL_PATH_ERRORS = f"data/urls/errors"
     DEFAULT_URL_PATH_CONTINUES = f"data/urls/continues"
@@ -244,11 +245,13 @@ class ParserBamperBy:
             return '1 страница'
 
     @staticmethod
-    def _get_datetime(split: bool = False) -> str | list:
+    def _get_datetime(t:bool = False, split: bool = False) -> str | list:
         """
             получение даты и времени. При необходимости(split=True) отделение даты от вермени
         """
         result = datetime.now().strftime("%d.%m.%Y_%H.%M")
+        if t:
+            result = result.split('_')[1]
         if split:
             return result.split('_')[0]
         return result
@@ -394,7 +397,7 @@ class ParserBamperBy:
         type(self).ALL_CAR_URL_LIST.extend(
             self.get_main_urls(self.BASE_URLS_CATEGORIES)
         )
-        self._write_to_json(self.DEFAULT_URL_PATH, f'[{self._get_datetime(True)}',
+        self._write_to_json(self.DEFAULT_URL_PATH, f'main_urls.json',
                             data=self.ALL_CAR_URL_LIST)
 
         chunks = self.get_chunks(self.ALL_CAR_URL_LIST,
@@ -408,13 +411,13 @@ class ParserBamperBy:
                 self.get_tasks_attrs_groups(chunk_data)
             )
 
-            self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+            self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(split=True)}",
                                 f'[{self._get_datetime(True)}]_ERRORS_attrs_groups.json',
                                 self.ERRORS, isadd=True)
-            self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+            self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(split=True)}",
                                 f'[{self._get_datetime(True)}]_ERRORS_URLS_attrs_groups.txt', self.ERRORS_URLS, workmode='a')
-            # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на модели авто
-            #     break
+            if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на модели авто
+                break
         self._write_to_json(self.DEFAULT_URL_PATH, 'urls_with_attrs_groups.json', self.URLS_WITH_ATTRS_GROUPS,
                             isadd=True)  # TODO все записиз json вынесены за пределы чанков, т к при большом объеме файла тратится много времени
         type(self).ERRORS.clear()
@@ -519,6 +522,7 @@ class ParserBamperBy:
         chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS,
                                  chunk_length=150)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
         # len_chunks = len(chunks)
+        start_chunk = time.monotonic()
         for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
             print(f'{"\t" * 10} Chunk id: #{chunk_id}')
@@ -528,16 +532,23 @@ class ParserBamperBy:
                 self.get_tasks_car_goods(chunk_data)
             )
 
-            self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+            self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(split=True)}",
                                 f'[{self._get_datetime(True)}]_ERRORS_goods_urls.json', self.ERRORS, isadd=True)
-            self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+            self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(split=True)}",
                                 f'[{self._get_datetime(True)}]_ERRORS_URLS_goods_urls.txt', self.ERRORS_URLS,
                                 workmode='a')
             type(self).ERRORS.clear()
             type(self).ERRORS_URLS.clear()
-            # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на сами объявдения
-            #     break
-        self._write_to_json(self.DEFAULT_URL_PATH, 'all_goods_urls.json', self.ALL_GOODS_URLS, isadd=True)
+            if chunk_id == 20:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на сами объявдения
+                break
+            if not chunk_id % 10:
+                end_chunk = time.monotonic()
+                self._write_to_json(self.DEFAULT_URL_PATH_ALL_GOODS_URLS, f'[chunk id {chunk_id}] all_goods_urls.json', self.ALL_GOODS_URLS)
+                self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+                    f"\tВремя работы скрипта получение списка [последний chunk id {chunk_id}]({(chunk_id + 1)  * 150}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end_chunk - start_chunk} секунд.",),
+                                    workmode='a')
+        self.ALL_GOODS_URLS.clear()
+
         type(self).URL_COUNTER = 0
         type(self).URLS_WITH_ATTRS_GROUPS.clear()
 
@@ -579,7 +590,7 @@ class ParserBamperBy:
         try:
             data_of_image_urls = soup.find('div', class_='detail-image').find_all('img')
         except Exception as e:
-            pass
+            data_of_image_urls = (soup.find('div', class_='detail-image').find('img'),) # https://bamper.by/zapchast_kryshka-korpusa-salonnogo-filtra/1907-79846345409_1/ ---- где одна картинка не находит тэк img
 
         for url in data_of_image_urls:
             image_urls.append(
@@ -727,36 +738,46 @@ class ParserBamperBy:
             Запуск задач сформированных методом get_tasks_car_items
             После сохраниение собранных данных из атрибута класса DATA_FOR_CSV в csv, а ошибок в отдельный файл
         """
-
+        list_of_files = []
         if not type(self).ALL_GOODS_URLS:
-            type(self).ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH}/all_goods_urls.json', isjson=True)
+            list_of_files = os.listdir(self.DEFAULT_URL_PATH_ALL_GOODS_URLS)
+
+
+        for filename in list_of_files:
+            type(self).ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{filename}', isjson=True)
             if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
                 os.remove(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv")
-        chunks = self.get_chunks(self.ALL_GOODS_URLS, 300)
-        # len_chunks = len(chunks)
-        for chunk_id, chunk_data in enumerate(chunks):
-            print('-' * 100)
-            print(f'{"\t" * 10} Chunk #{chunk_id}')
-            print('-' * 100)
-            asyncio.run(
-                self.get_tasks_car_items(chunk_data)
-            )
-            self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                f'[{self._get_datetime(True)}]_ERRORS_data_items.json', self.ERRORS, isadd=True)
-            self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                f'[{self._get_datetime(True)}]_ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
-                                workmode='a')
-            # self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
-            #                    self.ALL_GOODS_URLS[(chunk_id + 1) * 100:])
+            chunks = self.get_chunks(self.ALL_GOODS_URLS, 300)
+            # len_chunks = len(chunks)
+            start_chunk = time.monotonic()
+            for chunk_id, chunk_data in enumerate(chunks):
+                print('-' * 100)
+                print(f'{"\t" * 10} Chunk #{chunk_id}')
+                print('-' * 100)
+                asyncio.run(
+                    self.get_tasks_car_items(chunk_data)
+                )
+                self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(split=True)}",
+                                    f'[{self._get_datetime(True)}]_ERRORS_data_items.json', self.ERRORS, isadd=True)
+                self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(split=True)}",
+                                    f'[{self._get_datetime(True)}]_ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
+                                    workmode='a')
+                # self.write_to_file(self.DEFAULT_URL_PATH_CONTINUES, 'all_goods_urls.txt',
+                #                    self.ALL_GOODS_URLS[(chunk_id + 1) * 100:])
 
-            # type(self).DATA_FOR_CSV.clear()
-            self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
+                # type(self).DATA_FOR_CSV.clear()
+                self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
 
-            # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении данных о товаре
-            #     break
-        self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
-        self.ERRORS_URLS.clear()
-        self.ERRORS.clear()
+                # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении данных о товаре
+                #     break
+                if not chunk_id % 10:
+                    end_chunk = time.monotonic()
+                    self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV)
+                    self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+                        f"\tВремя работы скрипта получение данных по товарам [последний chunk id {chunk_id}]({(chunk_id + 1)  * 300}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end_chunk - start_chunk} секунд.",),
+                                        workmode='a')
+            self.ERRORS_URLS.clear()
+            self.ERRORS.clear()
         type(self).URL_COUNTER = 0
 
     def run_all_tasks(self) -> None:
@@ -769,6 +790,7 @@ class ParserBamperBy:
         """
         self._delete_old_files(self.DEFAULT_URL_PATH)
         self._delete_old_files(self.DEFAULT_URL_PATH_CSV)
+        self._delete_old_files(self.DEFAULT_URL_PATH_ALL_GOODS_URLS)
 
         # Эта часть ищет все ссылки брендов на каждую группу товара.
         start = time.monotonic()
