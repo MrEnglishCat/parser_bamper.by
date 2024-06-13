@@ -34,7 +34,8 @@ class ParserBamperBy:
     DEFAULT_URL_PATH_ERRORS = f"data/urls/errors"
     DEFAULT_URL_PATH_CONTINUES = f"data/urls/continues"
     DEFAULT_TEST_URL_PATH = "data/test"  # TODO TEST каталог для тестовых файлов
-
+    TOTAL_LINKS = 0  # счетчик используется только для того что бы узнать общее количество ссылок на товары, т к
+                     # подсчет ведется через длину чанков
     HEADERS = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'User-Agent': UserAgent().random,
@@ -82,7 +83,29 @@ class ParserBamperBy:
 
     @staticmethod
     def _get_length_iterable(obj: list | tuple) -> int:
+        """
+        Получение длины итерируемого объекта.
+        obj: это либо список, либо картеж
+        """
         return len(obj)
+
+    @staticmethod
+    def _get_cookies():
+        """
+        скопированы из curl
+        """
+        cookies = {
+            'videoblog_viewed': '%5B%22623Ub5kg_co%22%2C%221iX0u_Kyz60%22%5D',
+            '_ym_uid': '1717400752994434456',
+            '_ym_d': '1717400752',
+            '_gid': 'GA1.2.1606825417.1718184944',
+            'BITRIX_SM_aLastSearch': 'a%3A10%3A%7Bi%3A0%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A74%3A%22%D0%AE%D0%B1%D0%BA%D0%B0%20%D0%B1%D0%B0%D0%BC%D0%BF%D0%B5%D1%80%D0%B0%20%D0%BD%D0%B8%D0%B6%D0%BD%D1%8F%D1%8F%2C%20%D1%81%D0%BF%D0%BE%D0%B9%D0%BB%D0%B5%D1%80%20%D0%B1%D0%B0%D0%BC%D0%BF%D0%B5%D1%80%D0%B0%20BMW%20X6%22%3Bs%3A3%3A%22url%22%3Bs%3A59%3A%22%2Fzchbu%2Fzapchast_yubka-bampera-nizhnyaya%2Fmarka_bmw%2Fmodel_x6%2F%22%3B%7Di%3A1%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A2%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A66%3A%22%D0%A1%D1%82%D0%B5%D0%BA%D0%BB%D0%BE%D0%BF%D0%BE%D0%B4%D1%8A%D0%B5%D0%BC%D0%BD%D0%B8%D0%BA%20%D0%B7%D0%B0%D0%B4%D0%BD%D0%B8%D0%B9%20%D0%BF%D1%80%D0%B0%D0%B2%D1%8B%D0%B9%20BMW%207%20G70%22%3Bs%3A3%3A%22url%22%3Bs%3A66%3A%22%2Fzchbu%2Fzapchast_steklopodemnik-zadniy-pravyy%2Fmarka_bmw%2Fmodel_7g70%2F%22%3B%7Di%3A3%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A28%3A%22CD-%D1%87%D0%B5%D0%B9%D0%BD%D0%B4%D0%B6%D0%B5%D1%80%20Acura%20CL%22%3Bs%3A3%3A%22url%22%3Bs%3A51%3A%22%2Fzchbu%2Fzapchast_cd-cheyndzher%2Fmarka_acura%2Fmodel_cl%2F%22%3B%7Di%3A4%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A29%3A%22%D0%A0%D1%8B%D1%87%D0%B0%D0%B3%20%D0%B7%D0%B0%D0%B4%D0%BD%D0%B8%D0%B9%20BMW%202%22%3Bs%3A3%3A%22url%22%3Bs%3A48%3A%22%2Fzchbu%2Fzapchast_rychag-zadniy%2Fmarka_bmw%2Fmodel_2%2F%22%3B%7Di%3A5%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A84%3A%22%D0%91%D0%BB%D0%BE%D0%BA%20%D1%83%D0%BF%D1%80%D0%B0%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F%20%28%D0%B4%D1%80%D1%83%D0%B3%D0%B8%D0%B5%29%2C%20%D0%B1%D0%BB%D0%BE%D0%BA%20%D1%8D%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%BE%D0%BD%D0%BD%D1%8B%D0%B9%20BMW%20Z4%22%3Bs%3A3%3A%22url%22%3Bs%3A59%3A%22%2Fzchbu%2Fzapchast_blok-upravleniya-drugie%2Fmarka_bmw%2Fmodel_z4%2F%22%3B%7Di%3A6%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A7%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A28%3A%22CD-%D1%87%D0%B5%D0%B9%D0%BD%D0%B4%D0%B6%D0%B5%D1%80%20Acura%20CL%22%3Bs%3A3%3A%22url%22%3Bs%3A51%3A%22%2Fzchbu%2Fzapchast_cd-cheyndzher%2Fmarka_acura%2Fmodel_cl%2F%22%3B%7Di%3A8%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A24%3A%22%2Fzchbu%2Fartikul_e3011988%2F%22%3B%7Di%3A9%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A82%3A%22%D0%A1%D1%82%D0%BE%D0%B9%D0%BA%D0%B0%20%D1%81%D1%82%D0%B0%D0%B1%D0%B8%D0%BB%D0%B8%D0%B7%D0%B0%D1%82%D0%BE%D1%80%D0%B0%20%D0%BF%D0%B5%D1%80%D0%B5%D0%B4%D0%BD%D1%8F%D1%8F%2C%20%D1%82%D1%8F%D0%B3%D0%B0%20Alfa%20Romeo%20MiTo%22%3Bs%3A3%3A%22url%22%3Bs%3A75%3A%22%2Fzchbu%2Fzapchast_stoyka-stabilizatora-perednyaya%2Fmarka_alfaromeo%2Fmodel_mito%2F%22%3B%7D%7D',
+            'PHPSESSID': 'u4ufa7q8nquht72ca12k3d5r7l',
+            '_ga_6M4HY0QKW3': 'GS1.1.1718259582.35.1.1718260118.0.0.0',
+            '_ga': 'GA1.2.129790464.1717101810',
+            '_gat_UA-31751536-4': '1',
+        }
+        return cookies
 
     @staticmethod
     def _get_header() -> dict:
@@ -92,7 +115,9 @@ class ParserBamperBy:
         :return: заголовки/dict
         """
         return {
+            'authority': 'bamper.by',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'accept-language': 'ru,en-US;q=0.9,en;q=0.8',
             'User-Agent': UserAgent().random,
         }
 
@@ -196,7 +221,7 @@ class ParserBamperBy:
             __class__._check_dirs(path)
             file_found = __class__._check_dirs(path, check_file=True)
             with open(f"{path}/{filename}", mode='a' if file_found else 'w', encoding='utf-8-sig', newline='') as f_csv:
-                writer = csv.DictWriter(f_csv, fieldnames=__class__.CSV_FIELDNAMES, delimiter=';')
+                writer = csv.DictWriter(f_csv, fieldnames=__class__.CSV_FIELDNAMES, delimiter=';', quoting=csv.QUOTE_ALL)
                 if not file_found:
                     writer.writeheader()
                 writer.writerows(data)
@@ -353,7 +378,10 @@ class ParserBamperBy:
         type(self).URL_COUNTER += 1
         print(f"[{self.URL_COUNTER}][INFO id {url_index}] Сбор данных по {url}")
         async with session.get(url, headers=self._get_header()) as response:
-            soup = self.get_soup(await response.read())
+            try:
+                soup = self.get_soup(await response.read())
+            except Exception:
+                raise
             self.get_urls_from_soup(soup, car_brand, car_model)
 
     async def get_list_attr_groups_url(self, session: aiohttp.ClientSession, url: str,
@@ -450,7 +478,10 @@ class ParserBamperBy:
             await self.get_delay(2, 3)
             try:
                 async with session.get(url, headers=self._get_header()) as response:
-                    soup = self.get_soup(await response.read())
+                    try:
+                        soup = self.get_soup(await response.read())
+                    except Exception:
+                        raise
                     if PREVIOUS_ACTIVE_PAGE == self._get_active_page(soup):
                         start = False
                         # print(f"ID {url_index}", PREVIOUS_ACTIVE_PAGE, url)
@@ -517,16 +548,20 @@ class ParserBamperBy:
         так же сохраняет собранные данные и ошибки в отдельные файлы. Сохранение происходит по чанкам. Последующие
         данные других чанков записываются в конец файла созданного при обработке первого чанка
         """
+
         if not type(self).URLS_WITH_ATTRS_GROUPS:
             type(self).URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
         chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS,
                                  chunk_length=150)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
         # len_chunks = len(chunks)
         start_chunk = time.monotonic()
+
         for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
             print(f'{"\t" * 10} Chunk id: #{chunk_id}')
             print('-' * 100)
+
+            self.TOTAL_LINKS += len(chunk_data)
 
             asyncio.run(
                 self.get_tasks_car_goods(chunk_data)
@@ -539,7 +574,7 @@ class ParserBamperBy:
                                 workmode='a')
             type(self).ERRORS.clear()
             type(self).ERRORS_URLS.clear()
-            if chunk_id == 20:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на сами объявдения
+            if chunk_id == 10:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на сами объявдения
                 break
             if not chunk_id % 10:
                 end_chunk = time.monotonic()
@@ -590,6 +625,7 @@ class ParserBamperBy:
         try:
             data_of_image_urls = soup.find('div', class_='detail-image').find_all('img')
         except Exception as e:
+
             data_of_image_urls = (soup.find('div', class_='detail-image').find('img'),) # https://bamper.by/zapchast_kryshka-korpusa-salonnogo-filtra/1907-79846345409_1/ ---- где одна картинка не находит тэк img
 
         for url in data_of_image_urls:
@@ -611,11 +647,12 @@ class ParserBamperBy:
         item_comment = ''
         vendor_code = ''
         item_number = ''
+        engine_v = ''
         item_attributes = soup.find('div', class_='key-features').find_all('div', class_='media')
         for item in item_attributes:
             if not item_comment:
                 try:
-                    item_comment = item.find('span', class_='media-heading cut-h-375').text.strip()
+                    item_comment = item.find('span', class_='media-heading cut-h-375').text.strip().replace('\n', ' ')
                     continue
                 except:
                     pass
@@ -640,14 +677,17 @@ class ParserBamperBy:
         except Exception as e:
             city = 'не указан'
 
-        engine_v = 'не указан'
+        # engine_v = 'не указан'
 
-        if (a := soup.find('div', style="font-size: 17px;")):
-            for r in a.text.split(','):
-                r = r.strip()
-                if ' л' in r:
-                    engine_v = r
-                    break
+        try:
+            if (a := soup.find('div', style="font-size: 17px;")):
+                for r in a.text.split(','):
+                    r = r.strip()
+                    if ' л' in r:
+                        engine_v = r
+                        break
+        except Exception as e:
+            engine_v = 'не указан'
 
         result.update(
             {
@@ -693,7 +733,10 @@ class ParserBamperBy:
         print(f"[{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
         try:
             async with session.get(url, headers=self._get_header()) as response:
-                soup = self.get_soup(await response.read())
+                try:
+                    soup = self.get_soup(await response.read())
+                except Exception:
+                    raise
                 if (a := soup.find('div', class_='row block404')):
                     raise ValueError(f'Error 404 - {a.text}')
                 type(self).DATA_FOR_CSV.append(
@@ -754,6 +797,9 @@ class ParserBamperBy:
                 print('-' * 100)
                 print(f'{"\t" * 10} Chunk #{chunk_id}')
                 print('-' * 100)
+
+                self.TOTAL_LINKS += len(chunk_data)
+
                 asyncio.run(
                     self.get_tasks_car_items(chunk_data)
                 )
@@ -809,11 +855,11 @@ class ParserBamperBy:
         self.run_car_item_tasks()
         end = time.monotonic()
         print(
-            f"Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
+            f"Время работы скрипта получение списка ссылок на товары({self.TOTAL_LINKS}): {end - start} секунд. \n{'=' * 50}")
 
         print()
         self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-            f"Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд.",),
+            f"Время работы скрипта получение списка ссылок на товары({self.TOTAL_LINKS}): {end - start} секунд.",),
                             workmode='a')
 
         # Эта часть ищет данные по списку ссылок и затем сохраняет в csv
@@ -821,9 +867,9 @@ class ParserBamperBy:
         self.run_get_data_from_page_tasks()
         end = time.monotonic()
         print(
-            f"Время работы скрипта получение данных о товарах({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
+            f"Время работы скрипта получение данных о товарах({self.TOTAL_LINKS}): {end - start} секунд. \n{'=' * 50}")
         self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-            f"Время работы скрипта получение данных о товарах({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд.",),
+            f"Время работы скрипта получение данных о товарах({self.TOTAL_LINKS}): {end - start} секунд.",),
                             workmode='a')
 
 
