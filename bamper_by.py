@@ -404,7 +404,8 @@ class ParserBamperBy:
         Полчает на вход чанк(итерируемый объект) по его ссылкам формирует таски используя метод get_list_attr_groups_url
         """
         type(self).TASKS.clear()
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
+        # async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
+        async with aiohttp.ClientSession(trust_env=True) as session:
             for url_index, car_data in enumerate(chunk_data, 1):
                 car_brand = car_data[0]
                 car_model = car_data[1]
@@ -487,7 +488,7 @@ class ParserBamperBy:
                         # print(f"ID {url_index}", PREVIOUS_ACTIVE_PAGE, url)
                         continue
                     for row_index, row in enumerate(
-                            soup.find('div', class_='list-wrapper').find_all('div', class_='add-image'), 1):
+                            soup.find('div', class_='list-wrapper').find_all('div', class_='add-image'), 1):  # TODO контроль find('div', class_='list-wrapper')
                         type(self).ALL_GOODS_URLS.append(
                             [
                                 car_brand,
@@ -525,7 +526,8 @@ class ParserBamperBy:
         """
         type(self).TASKS.clear()
         print(f'[INFO] Формирование задач для начала сбора url товаров...')
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
+        # async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
+        async with aiohttp.ClientSession(trust_env=True) as session:
             for url_index, data in enumerate(chunk_data, 1):
                 car_brand = data[0]
                 car_model = data[1]
@@ -761,7 +763,8 @@ class ParserBamperBy:
         """
         type(self).TASKS.clear()
         print(f'[INFO] Формирование задач для начала сбора данных о товарах...')
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
+        # async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
+        async with aiohttp.ClientSession(trust_env=True) as session:
             for url_index, data in enumerate(chunk_data, 1):
                 car_brand = data[0]
                 car_model = data[1]
