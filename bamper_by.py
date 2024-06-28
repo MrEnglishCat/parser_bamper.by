@@ -742,7 +742,7 @@ class ParserBamperBy:
                     soup = self.get_soup(await response.read())
 
                     if (a := soup.find('div', class_='block404')):
-                        raise ValueError(f'Error 404 - {a.text}')
+                        raise ValueError(f'Error 404 - {a.text.strip()}')
                     type(self).DATA_FOR_CSV.append(
                         self.get_data(soup, url, car_brand, car_model, group, chapter)
                     )
