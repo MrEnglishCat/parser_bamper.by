@@ -626,8 +626,8 @@ class ParserBamperBy:
         image_urls = []
         try:
             data_of_image_urls = soup.find('div', class_='detail-image').find_all('img')
-        except Exception as e:
-
+        except:
+            # TODO добавить обработку исклуючения, проверить что за картинки находят указанные пути
             data_of_image_urls = (soup.find('div', class_='detail-image').find('img'),) # https://bamper.by/zapchast_kryshka-korpusa-salonnogo-filtra/1907-79846345409_1/ ---- где одна картинка не находит тэк img
 
         for url in data_of_image_urls:
@@ -737,14 +737,16 @@ class ParserBamperBy:
             async with session.get(url, headers=self._get_header()) as response:
                 try:
                     soup = self.get_soup(await response.read())
+
+                    if (a := soup.find('div', class_='block404')):
+                        raise ValueError(f'Error 404 - {a.text}')
+                    type(self).DATA_FOR_CSV.append(
+                        self.get_data(soup, url, car_brand, car_model, group, chapter)
+                    )
+                    print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
+
                 except Exception:
                     raise
-                if (a := soup.find('div', class_='row block404')):
-                    raise ValueError(f'Error 404 - {a.text}')
-                type(self).DATA_FOR_CSV.append(
-                    self.get_data(soup, url, car_brand, car_model, group, chapter)
-                )
-                print(f"\t[SUCCESS id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
             type(self).ERRORS.setdefault('get_data_from_page', {}).setdefault(f"{url_index}. {url}", str(e))
             type(self).ERRORS_URLS.add(url)
@@ -822,7 +824,7 @@ class ParserBamperBy:
                 if not chunk_id % 10:
                     end_chunk = time.monotonic()
                     self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
-                    self._write_to_json(self.DEFAULT_URL_PATH, 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
+                    self._write_to_json(f"{self.DEFAULT_URL_PATH}/res_json", 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
                     self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
                         f"\tВремя работы скрипта получение данных по товарам [последний chunk id {chunk_id}]({(chunk_id + 1)  * 300}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS) if chunk_id != 0 else (chunk_id + 1)  * 300}): {end_chunk - start_chunk} секунд.",),
                                         workmode='a')
