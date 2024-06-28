@@ -219,7 +219,8 @@ class ParserBamperBy:
         """
         if filename and data:
             __class__._check_dirs(path)
-            file_found = __class__._check_dirs(path, check_file=True)
+            file_found = __class__._check_dirs(f"{path}/{filename}", check_file=True)
+            print(__class__._check_dirs(f"{path}/{filename}", check_file=True))
             with open(f"{path}/{filename}", mode='a' if file_found else 'w', encoding='utf-8-sig', newline='') as f_csv:
                 writer = csv.DictWriter(f_csv, fieldnames=__class__.CSV_FIELDNAMES, delimiter=';', quoting=csv.QUOTE_ALL)
                 if not file_found:
@@ -622,8 +623,12 @@ class ParserBamperBy:
 
         """
         result = {}
-
         image_urls = []
+        item_comment = ''
+        vendor_code = ''
+        item_number = ''
+        engine_v = ''
+
         try:
             data_of_image_urls = soup.find('div', class_='detail-image').find_all('img')
         except:
@@ -649,11 +654,11 @@ class ParserBamperBy:
             price = 'цена не указана'
             units = 'N/A'
 
-        item_comment = ''
-        vendor_code = ''
-        item_number = ''
-        engine_v = ''
-        item_attributes = soup.find('div', class_='key-features').find_all('div', class_='media')
+
+        try:
+            item_attributes = soup.find('div', class_='key-features').find_all('div', class_='media')
+        except:
+            item_attributes = tuple()
         for item in item_attributes:
             if not item_comment:
                 try:
@@ -682,7 +687,6 @@ class ParserBamperBy:
         except Exception as e:
             city = 'не указан'
 
-        # engine_v = 'не указан'
 
         try:
             if (a := soup.find('div', style="font-size: 17px;")):
@@ -793,17 +797,17 @@ class ParserBamperBy:
         # if not type(self).ALL_GOODS_URLS:
         list_of_files = os.listdir(self.DEFAULT_URL_PATH_ALL_GOODS_URLS)
 
-
+        if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
+            os.remove(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv")
         for filename in list_of_files:
             type(self).ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{filename}', isjson=True)
-            if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
-                os.remove(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv")
+
             chunks = self.get_chunks(self.ALL_GOODS_URLS, 250)
             # len_chunks = len(chunks)
             start_chunk = time.monotonic()
             for chunk_id, chunk_data in enumerate(chunks):
                 print('-' * 100)
-                print(f'{"\t" * 10}[{filename}] Chunk #{chunk_id}')
+                print(f'{"\t" * 10}{filename} Chunk #{chunk_id}')
                 print('-' * 100)
 
                 self.TOTAL_LINKS += len(chunk_data)
@@ -832,6 +836,16 @@ class ParserBamperBy:
                         f"\tВремя работы скрипта получение данных по товарам [последний chunk id {chunk_id}]({(chunk_id + 1)  * 300}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS) if chunk_id != 0 else (chunk_id + 1)  * 300}): {end_chunk - start_chunk} секунд.",),
                                         workmode='a')
                     type(self).DATA_FOR_CSV.clear()
+            if self.DATA_FOR_CSV:
+                end_chunk = time.monotonic()
+
+                self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
+                self._write_to_json(f"{self.DEFAULT_URL_PATH}/res_json", 'all_data_items.json', self.DATA_FOR_CSV,
+                                    isadd=True)
+                self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+                    f"\tВремя работы скрипта получение данных по товарам [последний chunk id {chunk_id}]({(chunk_id + 1) * 300}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS) if chunk_id != 0 else (chunk_id + 1) * 300}): {end_chunk - start_chunk} секунд.",),
+                                    workmode='a')
+                type(self).DATA_FOR_CSV.clear()
             self.ERRORS_URLS.clear()
             self.ERRORS.clear()
         type(self).URL_COUNTER = 0
@@ -844,33 +858,33 @@ class ParserBamperBy:
                 2 run_car_item_tasks
                 3 run_get_data_from_page_tasks
         """
-        self._delete_old_files(self.DEFAULT_URL_PATH)
-        self._delete_old_files(self.DEFAULT_URL_PATH_CSV)
-        self._delete_old_files(self.DEFAULT_URL_PATH_ALL_GOODS_URLS)
-
-        # Эта часть ищет все ссылки брендов на каждую группу товара.
-        start = time.monotonic()
-        self.run_attrs_groups_tasks()
-        end = time.monotonic()
-        print(
-            f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд. \n{'=' * 50}")
-
-        print()
-        self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-            f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",),
-                            workmode='a')
-
-        # Эта часть ищет ссылки на сами товары.
-        start = time.monotonic()
-        self.run_car_item_tasks()
-        end = time.monotonic()
-        print(
-            f"Время работы скрипта получение списка ссылок на товары({self.TOTAL_LINKS}): {end - start} секунд. \n{'=' * 50}")
-
-        print()
-        self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-            f"Время работы скрипта получение списка ссылок на товары({self.TOTAL_LINKS}): {end - start} секунд.",),
-                            workmode='a')
+        # self._delete_old_files(self.DEFAULT_URL_PATH)
+        # self._delete_old_files(self.DEFAULT_URL_PATH_CSV)
+        # self._delete_old_files(self.DEFAULT_URL_PATH_ALL_GOODS_URLS)
+        #
+        # # Эта часть ищет все ссылки брендов на каждую группу товара.
+        # start = time.monotonic()
+        # self.run_attrs_groups_tasks()
+        # end = time.monotonic()
+        # print(
+        #     f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд. \n{'=' * 50}")
+        #
+        # print()
+        # self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+        #     f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",),
+        #                     workmode='a')
+        #
+        # # Эта часть ищет ссылки на сами товары.
+        # start = time.monotonic()
+        # self.run_car_item_tasks()
+        # end = time.monotonic()
+        # print(
+        #     f"Время работы скрипта получение списка ссылок на товары({self.TOTAL_LINKS}): {end - start} секунд. \n{'=' * 50}")
+        #
+        # print()
+        # self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+        #     f"Время работы скрипта получение списка ссылок на товары({self.TOTAL_LINKS}): {end - start} секунд.",),
+        #                     workmode='a')
 
         # Эта часть ищет данные по списку ссылок и затем сохраняет в csv
         start = time.monotonic()
