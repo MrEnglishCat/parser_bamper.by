@@ -628,7 +628,10 @@ class ParserBamperBy:
             data_of_image_urls = soup.find('div', class_='detail-image').find_all('img')
         except:
             # TODO добавить обработку исклуючения, проверить что за картинки находят указанные пути
-            data_of_image_urls = (soup.find('div', class_='detail-image').find('img'),) # https://bamper.by/zapchast_kryshka-korpusa-salonnogo-filtra/1907-79846345409_1/ ---- где одна картинка не находит тэк img
+            try:
+                data_of_image_urls = (soup.find('div', class_='detail-image').find('img'),) # https://bamper.by/zapchast_kryshka-korpusa-salonnogo-filtra/1907-79846345409_1/ ---- где одна картинка не находит тэк img
+            except:
+                data_of_image_urls = tuple()
 
         for url in data_of_image_urls:
             image_urls.append(
@@ -795,12 +798,12 @@ class ParserBamperBy:
             type(self).ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{filename}', isjson=True)
             if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
                 os.remove(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv")
-            chunks = self.get_chunks(self.ALL_GOODS_URLS, 300)
+            chunks = self.get_chunks(self.ALL_GOODS_URLS, 250)
             # len_chunks = len(chunks)
             start_chunk = time.monotonic()
             for chunk_id, chunk_data in enumerate(chunks):
                 print('-' * 100)
-                print(f'{"\t" * 10} Chunk #{chunk_id}')
+                print(f'{"\t" * 10}[{filename}] Chunk #{chunk_id}')
                 print('-' * 100)
 
                 self.TOTAL_LINKS += len(chunk_data)
