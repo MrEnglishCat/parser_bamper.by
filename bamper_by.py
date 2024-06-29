@@ -861,33 +861,33 @@ class ParserBamperBy:
                 2 run_car_item_tasks
                 3 run_get_data_from_page_tasks
         """
-        # self._delete_old_files(self.DEFAULT_URL_PATH)
-        # self._delete_old_files(self.DEFAULT_URL_PATH_CSV)
-        # self._delete_old_files(self.DEFAULT_URL_PATH_ALL_GOODS_URLS)
-        #
-        # # Эта часть ищет все ссылки брендов на каждую группу товара.
-        # start = time.monotonic()
-        # self.run_attrs_groups_tasks()
-        # end = time.monotonic()
-        # print(
-        #     f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд. \n{'=' * 50}")
-        #
-        # print()
-        # self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-        #     f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",),
-        #                     workmode='a')
-        #
-        # # Эта часть ищет ссылки на сами товары.
-        # start = time.monotonic()
-        # self.run_car_item_tasks()
-        # end = time.monotonic()
-        # print(
-        #     f"Время работы скрипта получение списка ссылок на товары({self.TOTAL_LINKS}): {end - start} секунд. \n{'=' * 50}")
-        #
-        # print()
-        # self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-        #     f"Время работы скрипта получение списка ссылок на товары({self.TOTAL_LINKS}): {end - start} секунд.",),
-        #                     workmode='a')
+        self._delete_old_files(self.DEFAULT_URL_PATH)
+        self._delete_old_files(self.DEFAULT_URL_PATH_CSV)
+        self._delete_old_files(self.DEFAULT_URL_PATH_ALL_GOODS_URLS)
+
+        # Эта часть ищет все ссылки брендов на каждую группу товара.
+        start = time.monotonic()
+        self.run_attrs_groups_tasks()
+        end = time.monotonic()
+        print(
+            f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд. \n{'=' * 50}")
+
+        print()
+        self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+            f"Время работы скрипта получение списка ({self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end - start} секунд.",),
+                            workmode='a')
+
+        # Эта часть ищет ссылки на сами товары.
+        start = time.monotonic()
+        self.run_car_item_tasks()
+        end = time.monotonic()
+        print(
+            f"Время работы скрипта получение списка ссылок на товары({self.TOTAL_LINKS}): {end - start} секунд. \n{'=' * 50}")
+
+        print()
+        self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+            f"Время работы скрипта получение списка ссылок на товары({self.TOTAL_LINKS}): {end - start} секунд.",),
+                            workmode='a')
 
         # Эта часть ищет данные по списку ссылок и затем сохраняет в csv
         start = time.monotonic()
