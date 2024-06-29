@@ -795,6 +795,7 @@ class ParserBamperBy:
         """
         list_of_files = []
         # if not type(self).ALL_GOODS_URLS:
+        time.sleep(5)
         list_of_files = os.listdir(self.DEFAULT_URL_PATH_ALL_GOODS_URLS)
 
         if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
