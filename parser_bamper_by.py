@@ -243,7 +243,6 @@ class ParserBamperBy:
 
         soup: BeautifulSoup
         """
-        # TODO добавлен try
         try:
             if (pagination_bar := soup.find('div', class_='pagination-bar').find('a', class_='modern-page-next')):
                 return pagination_bar.get('href')
@@ -529,7 +528,6 @@ class ParserBamperBy:
         """
 
         if not self.URLS_WITH_ATTRS_GROUPS:
-            print('____HERE_____')  # TODO delete
             self.URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
 
         chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS,
@@ -776,7 +774,6 @@ class ParserBamperBy:
 
             start_chunk = time.monotonic()
             chunks = self.get_chunks(self.ALL_GOODS_URLS, 300)
-            # len_chunks = len(chunks)
             for chunk_id, chunk_data in enumerate(chunks):
                 print('-' * 100)
                 print(f'{"\t" * 10}[{self.OBJ_ID}] Chunk #{chunk_id}')
@@ -815,9 +812,6 @@ class ParserBamperBy:
         type(self).URL_COUNTER = 0
 
     def run_first_task(self) -> None:
-        # self._delete_old_files(self.DEFAULT_URL_PATH)  # TODO на время тестов закомитил
-        # self._delete_old_files(self.DEFAULT_URL_PATH_CSV)  # TODO на время тестов закомитил
-
         # Эта часть ищет все ссылки брендов на каждую группу товара.
         start = time.monotonic()
         self.run_attrs_groups_tasks()
@@ -838,17 +832,17 @@ class ParserBamperBy:
                 2 run_car_item_tasks
                 3 run_get_data_from_page_tasks
         """
-        # # Эта часть ищет ссылки на сами товары.
-        # start = time.monotonic()
-        # self.run_car_item_tasks()
-        # end = time.monotonic()
-        # print(
-        #     f"[{self.OBJ_ID}] Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
-        #
-        # print()
-        # self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
-        #     f"[{self.OBJ_ID}]Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд.",),
-        #                     workmode='a')
+        # Эта часть ищет ссылки на сами товары.
+        start = time.monotonic()
+        self.run_car_item_tasks()
+        end = time.monotonic()
+        print(
+            f"[{self.OBJ_ID}] Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд. \n{'=' * 50}")
+
+        print()
+        self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+            f"[{self.OBJ_ID}]Время работы скрипта получение списка ссылок на товары({self._get_length_iterable(self.ALL_GOODS_URLS)}): {end - start} секунд.",),
+                            workmode='a')
 
         # Эта часть ищет данные по списку ссылок и затем сохраняет в csv
         start = time.monotonic()
@@ -893,22 +887,21 @@ class MultiplyParser(ParserBamperBy):
 
             # Удаление файлов с результатами работы прошлых запусков.
             obj.OBJ_ID = obj_id
-            #TODO uncommit
 
-            # if os.path.exists(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{obj_id}"):
-            #     files = os.listdir(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{obj_id}")
-            #     for file in files:
-            #         os.remove(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{obj_id}/{file}")
-            #
-            # if os.path.exists(f"{self.DEFAULT_URL_PATH_CSV}/csv/{obj_id}"):
-            #     files = os.listdir(f"{self.DEFAULT_URL_PATH_CSV}/csv/{obj_id}")
-            #     for file in files:
-            #         os.remove(f"{self.DEFAULT_URL_PATH_CSV}/csv/{obj_id}/{file}")
-            #
-            # if os.path.exists(f"{self.DEFAULT_URL_PATH_CSV}/res_json/{obj_id}"):
-            #     files = os.listdir(f"{self.DEFAULT_URL_PATH_CSV}/res_json/{obj_id}")
-            #     for file in files:
-            #         os.remove(f"{self.DEFAULT_URL_PATH_CSV}/res_json/{obj_id}/{file}")
+            if os.path.exists(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{obj_id}"):
+                files = os.listdir(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{obj_id}")
+                for file in files:
+                    os.remove(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{obj_id}/{file}")
+
+            if os.path.exists(f"{self.DEFAULT_URL_PATH_CSV}/csv/"):
+                files = os.listdir(f"{self.DEFAULT_URL_PATH_CSV}/csv/")
+                for file in files:
+                    os.remove(f"{self.DEFAULT_URL_PATH_CSV}/csv/{file}")
+
+            if os.path.exists(f"{self.DEFAULT_URL_PATH_CSV}/res_json/"):
+                files = os.listdir(f"{self.DEFAULT_URL_PATH_CSV}/res_json/")
+                for file in files:
+                    os.remove(f"{self.DEFAULT_URL_PATH_CSV}/res_json/{file}")
             ############################################################################
             self.TASKS.append(
                 asyncio.create_task(
