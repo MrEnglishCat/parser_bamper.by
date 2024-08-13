@@ -799,9 +799,9 @@ class ParserBamperBy:
         list_of_files = os.listdir(self.DEFAULT_URL_PATH_ALL_GOODS_URLS)
 
         if self._check_dirs(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv", check_file=True):
-            os.remove(f"{self.DEFAULT_URL_PATH_CSV}/RESULT.csv")
+            os.remove(f"{self.DEFAULT_URL_PATH_CSV}/")
         if self._check_dirs(f"{self.DEFAULT_URL_PATH}/res_json/all_data_items.json", check_file=True):
-            os.remove(f"{self.DEFAULT_URL_PATH}/res_json/all_data_items.json")
+            os.remove(f"{self.DEFAULT_URL_PATH}/res_json/")
         for filename in list_of_files:
             type(self).ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{filename}', isjson=True)
 
