@@ -781,8 +781,11 @@ class ParserBamperBy:
                 asyncio.run(
                     self.get_tasks_car_items(chunk_data)
                 )
-                self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                    f'ERRORS_data_items.json', self.ERRORS, isadd=True)
+                try:
+                    self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
+                                     f'ERRORS_data_items.json', self.ERRORS, isadd=True)
+                except Exception as e:
+                    print("____ERRRRRRORRR_____", e)
                 self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
                                     f'ERRORS_URLS_data_items.txt', self.ERRORS_URLS,
                                     workmode='a')
