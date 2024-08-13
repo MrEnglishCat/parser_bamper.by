@@ -586,6 +586,14 @@ class ParserBamperBy:
                     f"\tВремя работы скрипта получение списка [последний chunk id {chunk_id}]({(chunk_id + 1)  * 150}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end_chunk - start_chunk} секунд.",),
                                     workmode='a')
                 self.ALL_GOODS_URLS.clear()
+        if self.ALL_GOODS_URLS:
+            end_chunk = time.monotonic()
+            self._write_to_json(self.DEFAULT_URL_PATH_ALL_GOODS_URLS, f'[chunk id {chunk_id}] all_goods_urls.json',
+                                self.ALL_GOODS_URLS)
+            self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
+                f"\tВремя работы скрипта получение списка [последний chunk id {chunk_id}]({(chunk_id + 1) * 150}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end_chunk - start_chunk} секунд.",),
+                                workmode='a')
+            self.ALL_GOODS_URLS.clear()
 
         type(self).URL_COUNTER = 0
         type(self).URLS_WITH_ATTRS_GROUPS.clear()
