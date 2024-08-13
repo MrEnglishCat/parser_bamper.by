@@ -60,7 +60,7 @@ class ParserBamperBy:
 
     def __init__(self):
         self.TASKS = []
-
+        self.OBJ_ID = None
         # для сбора данных
         self.URLS_WITH_ATTRS_GROUPS = []
         # self.ALL_GOODS_URLS = []
@@ -531,6 +531,8 @@ class ParserBamperBy:
         chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS,
                                  chunk_length=200)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
         # len_chunks = len(chunks)
+        start_chunk = time.monotonic()
+
         for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
             print(f'{"\t" * 10}[{obj_id}] Chunk id: #{chunk_id}')
@@ -861,7 +863,6 @@ class MultiplyParser(ParserBamperBy):
             self.URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
         chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS, len(self.URLS_WITH_ATTRS_GROUPS)//3) # TODO
         for chunk in chunks:
-            print("HERE")
             instance = obj()
             instance.URLS_WITH_ATTRS_GROUPS = chunk
             self.PARSER_INSTANCE.append(instance)
@@ -871,6 +872,12 @@ class MultiplyParser(ParserBamperBy):
         nest_asyncio.apply()
         for obj_id, obj in enumerate(self.PARSER_INSTANCE, 1):
             # Удаление файлов с результатами работы прошлых запусков.
+            obj.OBJ_ID = obj_id
+            if os.path.exists(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{obj_id}"):
+                files = os.listdir(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{obj_id}")
+                for file in files:
+                    os.remove(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{obj_id}/{file}")
+
             if os.path.exists(f"{self.DEFAULT_URL_PATH_CSV}/csv/{obj_id}"):
                 files = os.listdir(f"{self.DEFAULT_URL_PATH_CSV}/csv/{obj_id}")
                 for file in files:
