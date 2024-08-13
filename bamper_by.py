@@ -833,8 +833,8 @@ class ParserBamperBy:
                 #     break
                 if not chunk_id % 10:
                     end_chunk = time.monotonic()
-                    self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
-                    self._write_to_json(f"{self.DEFAULT_URL_PATH}/res_json", 'all_data_items.json', self.DATA_FOR_CSV, isadd=True)
+                    self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'[{chunk_id}]_RESULT.csv', self.DATA_FOR_CSV)
+                    self._write_to_json(f"{self.DEFAULT_URL_PATH}/res_json", f'[{chunk_id}]_all_data_items.json', self.DATA_FOR_CSV)
                     self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
                         f"\tВремя работы скрипта получение данных по товарам [последний chunk id {chunk_id}]({(chunk_id + 1)  * 300}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS) if chunk_id != 0 else (chunk_id + 1)  * 300}): {end_chunk - start_chunk} секунд.",),
                                         workmode='a')
@@ -842,9 +842,8 @@ class ParserBamperBy:
             if self.DATA_FOR_CSV:
                 end_chunk = time.monotonic()
 
-                self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'RESULT.csv', self.DATA_FOR_CSV)
-                self._write_to_json(f"{self.DEFAULT_URL_PATH}/res_json", 'all_data_items.json', self.DATA_FOR_CSV,
-                                    isadd=True)
+                self._write_to_csv(self.DEFAULT_URL_PATH_CSV, f'[{chunk_id}]_RESULT.csv', self.DATA_FOR_CSV)
+                self._write_to_json(f"{self.DEFAULT_URL_PATH}/res_json", f'[{chunk_id}]_all_data_items.json', self.DATA_FOR_CSV)
                 self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
                     f"\tВремя работы скрипта получение данных по товарам [последний chunk id {chunk_id}]({(chunk_id + 1) * 300}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS) if chunk_id != 0 else (chunk_id + 1) * 300}): {end_chunk - start_chunk} секунд.",),
                                     workmode='a')
