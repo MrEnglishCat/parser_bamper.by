@@ -905,6 +905,12 @@ class MultiplyParser(ParserBamperBy):
                 files = os.listdir(f"{self.DEFAULT_URL_PATH_CSV}/res_json/")
                 for file in files:
                     os.remove(f"{self.DEFAULT_URL_PATH_CSV}/res_json/{file}")
+
+            if self._check_dirs(f"{self.DEFAULT_URL_PATH}/main_urls.json", check_file=True):
+                os.remove(f"{self.DEFAULT_URL_PATH}/main_urls.json")
+
+            if self._check_dirs(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json", check_file=True):
+                os.remove(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json")
             ############################################################################
             self.TASKS.append(
                 asyncio.create_task(
