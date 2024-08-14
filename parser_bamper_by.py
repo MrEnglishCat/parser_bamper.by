@@ -554,8 +554,8 @@ class ParserBamperBy:
                                 workmode='a')
             self.ERRORS.clear()
             self.ERRORS_URLS.clear()
-            if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на сами объявдения
-                break
+            # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на сами объявдения
+            #     break
 
             if not chunk_id % 10:
                 end_chunk = time.monotonic()
