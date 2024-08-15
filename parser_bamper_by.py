@@ -274,8 +274,13 @@ class ParserBamperBy:
         response = requests.get(url, headers=self._get_header()).text
         soup = BeautifulSoup(response, 'html.parser')
         # list_of_data_to_be_processed = soup.find('div', class_='inner-box').find_all('div', class_='col-md-12')
-        list_of_data_to_be_processed = soup.find('div', class_='inner-box relative').find_all('div', class_='col-md-12')
-        # soup.find('div', class_='inner-box relative').find_all('ul', class_='cat-list')
+        try:
+            list_of_data_to_be_processed = soup.find('div', class_='inner-box relative').find_all('div', class_='col-md-12')
+        except Exception as e:
+            self.ERRORS.setdefault('get_main_urls', {}).setdefault(f"{url}", e.args)
+            self.ERRORS_URLS.add(url)
+            print(f"\t[ERROR  {url}] ОШИБКА! ")
+            list_of_data_to_be_processed = []
         for row in list_of_data_to_be_processed:
             car_brand = row.find('h3').text.strip()
             for row_row in row.find('div', class_='row').find_all('a'):
