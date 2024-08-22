@@ -757,7 +757,7 @@ class ParserBamperBy:
 
         """
         self.TASKS.clear()
-        print(f'[INFO] Формирование задач для начала сбора данных о товарах...')
+        print(f'[instance {self.OBJ_ID}][INFO] Формирование задач для начала сбора данных о товарах...')
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
             for url_index, data in enumerate(chunk_data, 1):
                 car_brand = data[0]
@@ -886,24 +886,24 @@ class MultiplyParser(ParserBamperBy):
         '''
 
         # Удаление 2 основных файлов для сбора ссылок
-        if self._check_dirs(f"{self.DEFAULT_URL_PATH}/main_urls.json", check_file=True):
-            os.remove(f"{self.DEFAULT_URL_PATH}/main_urls.json")
-
-        if self._check_dirs(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json", check_file=True):
-            os.remove(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json")
-        ################################################
-
-        self.run_attrs_groups_tasks()
-
-
+        # if self._check_dirs(f"{self.DEFAULT_URL_PATH}/main_urls.json", check_file=True):
+        #     os.remove(f"{self.DEFAULT_URL_PATH}/main_urls.json")
         #
-        # if not self.URLS_WITH_ATTRS_GROUPS:
-        #     self.URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
-        # chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS, len(self.URLS_WITH_ATTRS_GROUPS)//3) # TODO
-        # for chunk in chunks:
-        #     instance = obj()
-        #     instance.URLS_WITH_ATTRS_GROUPS = chunk
-        #     self.PARSER_INSTANCE.append(instance)
+        # if self._check_dirs(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json", check_file=True):
+        #     os.remove(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json")
+        # ################################################
+        #
+        # self.run_attrs_groups_tasks()
+        #
+
+
+        if not self.URLS_WITH_ATTRS_GROUPS:
+            self.URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
+        chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS, len(self.URLS_WITH_ATTRS_GROUPS)//3) # TODO
+        for chunk in chunks:
+            instance = obj()
+            instance.URLS_WITH_ATTRS_GROUPS = chunk
+            self.PARSER_INSTANCE.append(instance)
 
     async def get_tasks(self):
         import nest_asyncio
