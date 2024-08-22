@@ -14,7 +14,8 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from datetime import datetime
 
-
+# Token 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
+# git clone https://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@github.com/MrEnglishCat/parser_bamper.by.git
 # sys.stdin.reconfigure(encoding='utf-8')  # если в терминале проблемы с кодировкой, то раскомитить 17 и 18 строчки, либо изменить кодировку в терминале
 # sys.stdout.reconfigure(encoding='utf-8')
 
@@ -274,13 +275,20 @@ class ParserBamperBy:
         response = requests.get(url, headers=self._get_header()).text
         soup = BeautifulSoup(response, 'html.parser')
         # list_of_data_to_be_processed = soup.find('div', class_='inner-box').find_all('div', class_='col-md-12')
+
         try:
             list_of_data_to_be_processed = soup.find('div', class_='inner-box relative').find_all('div', class_='col-md-12')
         except Exception as e:
             self.ERRORS.setdefault('get_main_urls', {}).setdefault(f"{url}", e.args)
             self.ERRORS_URLS.add(url)
             print(f"\t[ERROR  {url}] ОШИБКА! ")
+            # TODO принты ниже удалить
+            print('='*100)
+            print(soup)
+            print('='*100)
+
             list_of_data_to_be_processed = []
+
         for row in list_of_data_to_be_processed:
             car_brand = row.find('h3').text.strip()
             for row_row in row.find('div', class_='row').find_all('a'):
@@ -429,6 +437,7 @@ class ParserBamperBy:
                                 self.ERRORS, isadd=True)
             self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
                                 f'ERRORS_URLS_attrs_groups.txt', self.ERRORS_URLS, workmode='a')
+            self.URLS_WITH_ATTRS_GROUPS.clear()
             # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на модели авто
             #     break
         self.ERRORS.clear()
@@ -887,14 +896,14 @@ class MultiplyParser(ParserBamperBy):
         self.run_attrs_groups_tasks()
 
 
-
-        if not self.URLS_WITH_ATTRS_GROUPS:
-            self.URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
-        chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS, len(self.URLS_WITH_ATTRS_GROUPS)//3) # TODO
-        for chunk in chunks:
-            instance = obj()
-            instance.URLS_WITH_ATTRS_GROUPS = chunk
-            self.PARSER_INSTANCE.append(instance)
+        #
+        # if not self.URLS_WITH_ATTRS_GROUPS:
+        #     self.URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
+        # chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS, len(self.URLS_WITH_ATTRS_GROUPS)//3) # TODO
+        # for chunk in chunks:
+        #     instance = obj()
+        #     instance.URLS_WITH_ATTRS_GROUPS = chunk
+        #     self.PARSER_INSTANCE.append(instance)
 
     async def get_tasks(self):
         import nest_asyncio
