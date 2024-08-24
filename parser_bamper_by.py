@@ -394,7 +394,7 @@ class ParserBamperBy:
         Полчает на вход чанк(итерируемый объект) по его ссылкам формирует таски используя метод get_list_attr_groups_url
         """
         self.TASKS.clear()
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(), trust_env=True) as session:
             for url_index, car_data in enumerate(chunk_data, 1):
                 car_brand = car_data[0]
                 car_model = car_data[1]
@@ -517,7 +517,7 @@ class ParserBamperBy:
         """
         self.TASKS.clear()
         print(f'[{self.OBJ_ID}][INFO] Формирование задач для начала сбора url товаров...')
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(), trust_env=True) as session:
             for url_index, data in enumerate(chunk_data, 1):
                 car_brand = data[0]
                 car_model = data[1]
@@ -758,7 +758,7 @@ class ParserBamperBy:
         """
         self.TASKS.clear()
         print(f'[instance {self.OBJ_ID}][INFO] Формирование задач для начала сбора данных о товарах...')
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(0), trust_env=True) as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(), trust_env=True) as session:
             for url_index, data in enumerate(chunk_data, 1):
                 car_brand = data[0]
                 car_model = data[1]
