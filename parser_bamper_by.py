@@ -886,15 +886,15 @@ class MultiplyParser(ParserBamperBy):
         '''
 
         # Удаление 2 основных файлов для сбора ссылок
-        # if self._check_dirs(f"{self.DEFAULT_URL_PATH}/main_urls.json", check_file=True):
-        #     os.remove(f"{self.DEFAULT_URL_PATH}/main_urls.json")
-        #
-        # if self._check_dirs(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json", check_file=True):
-        #     os.remove(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json")
-        # ################################################
-        #
-        # self.run_attrs_groups_tasks()
-        #
+        if self._check_dirs(f"{self.DEFAULT_URL_PATH}/main_urls.json", check_file=True):
+            os.remove(f"{self.DEFAULT_URL_PATH}/main_urls.json")
+
+        if self._check_dirs(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json", check_file=True):
+            os.remove(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json")
+        ################################################
+
+        self.run_attrs_groups_tasks()
+
 
 
         if not self.URLS_WITH_ATTRS_GROUPS:
