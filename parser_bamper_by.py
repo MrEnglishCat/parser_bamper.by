@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import re
+import nest_asyncio
 
 import aiohttp
 import requests
@@ -14,10 +15,13 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from datetime import datetime
 
+
 # Token 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
 # git clone https://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@github.com/MrEnglishCat/parser_bamper.by.git
 # sys.stdin.reconfigure(encoding='utf-8')  # если в терминале проблемы с кодировкой, то раскомитить 17 и 18 строчки, либо изменить кодировку в терминале
 # sys.stdout.reconfigure(encoding='utf-8')
+
+nest_asyncio.apply()
 
 
 class ParserBamperBy:
@@ -28,6 +32,7 @@ class ParserBamperBy:
     BASE_URL = 'https://www.bamper.by'
     BASE_URLS_CATEGORIES = 'https://bamper.by/catalog/modeli/'
     ALL_CAR_URL_LIST = []
+    URLS_WITH_ATTRS_GROUPS = []
     # ALL_GOODS_URLS = []
     # DEFAULT_ ... пути для файлов
     DEFAULT_URL_PATH = "data/urls"
@@ -36,7 +41,6 @@ class ParserBamperBy:
     DEFAULT_URL_PATH_ERRORS = f"data/urls/errors"
     DEFAULT_URL_PATH_CONTINUES = f"data/urls/continues"
     DEFAULT_TEST_URL_PATH = "data/test"  # TODO TEST каталог для тестовых файлов
-
 
     HEADERS = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -230,6 +234,7 @@ class ParserBamperBy:
                 return (row.strip() for row in f.readlines())
         else:
             return empty
+
     @staticmethod
     def _get_active_page(soup: BeautifulSoup) -> str:
         """
@@ -279,15 +284,16 @@ class ParserBamperBy:
         # list_of_data_to_be_processed = soup.find('div', class_='inner-box').find_all('div', class_='col-md-12')
 
         try:
-            list_of_data_to_be_processed = soup.find('div', class_='inner-box relative').find_all('div', class_='col-md-12')
+            list_of_data_to_be_processed = soup.find('div', class_='inner-box relative').find_all('div',
+                                                                                                  class_='col-md-12')
         except Exception as e:
             self.ERRORS.setdefault('get_main_urls', {}).setdefault(f"{url}", e.args)
             self.ERRORS_URLS.add(url)
             print(f"\t[ERROR  {url}] ОШИБКА! ")
             # TODO принты ниже удалить
-            print('='*100)
+            print('=' * 100)
             print(soup)
-            print('='*100)
+            print('=' * 100)
 
             list_of_data_to_be_processed = []
 
@@ -314,16 +320,6 @@ class ParserBamperBy:
         soup = BeautifulSoup(response, 'html.parser')
         return soup
 
-    # def get_urls_from_soup(self, soup):
-    #     result_urls = []
-    #     # for row in soup.find('div', class_='inner-box relative').find_all('ul', class_='cat-list'):
-    #     for row in soup.find('div', class_='relative').find_all('a'):
-    #         result_urls.append(
-    #             # self.BASE_URL + link.get('href')
-    #             self.BASE_URL + row.get('href')
-    #         )
-    #     return result_urls
-
     def get_urls_from_soup(self, soup: BeautifulSoup, car_brand: str, car_model: str) -> None:
         """
         Получает ссылки из объекта BeautifulSoup. Добавляет их в атрибут класса URLS_WITH_ATTRS_GROUPS
@@ -337,7 +333,7 @@ class ParserBamperBy:
                 group = row_text
                 continue
             chapter = row_text
-            self.URLS_WITH_ATTRS_GROUPS.append(
+            type(self).URLS_WITH_ATTRS_GROUPS.append(
                 [
                     car_brand,
                     car_model,
@@ -422,7 +418,7 @@ class ParserBamperBy:
                                 data=type(self).ALL_CAR_URL_LIST)
 
         chunks = self.get_chunks(type(self).ALL_CAR_URL_LIST,
-                                 200)  # TODO объект генератор, прочитать можно 1 раз, после данных в нем не будет
+                                 200)  # объект генератор, прочитать можно 1 раз, после данных в нем не будет
         # len_chunks = len(chunks)
         for chunk_id, chunk_data in enumerate(chunks):
             print('-' * 100)
@@ -432,7 +428,7 @@ class ParserBamperBy:
                 self.get_tasks_attrs_groups(chunk_data)
             )
 
-            self._write_to_json(self.DEFAULT_URL_PATH, 'urls_with_attrs_groups.json', self.URLS_WITH_ATTRS_GROUPS,
+            self._write_to_json(self.DEFAULT_URL_PATH, 'urls_with_attrs_groups.json', type(self).URLS_WITH_ATTRS_GROUPS,
                                 isadd=True)
             self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
                                 f'ERRORS_attrs_groups.json',
@@ -468,7 +464,8 @@ class ParserBamperBy:
         await self.get_delay(2, 3)
         self.URL_COUNTER += 1
         PREVIOUS_ACTIVE_PAGE = ''  # переменная только для этой функции get_all_goods_from_page()
-        print(f"[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
+        print(
+            f"[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
         start = True
         while start:
             await self.get_delay(2, 3)
@@ -501,12 +498,14 @@ class ParserBamperBy:
                         PREVIOUS_ACTIVE_PAGE = self._get_active_page(soup)
                         start = False
 
-                    print(f"\t[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][SUCCESS url id {url_index}][PAGE: {PREVIOUS_ACTIVE_PAGE}] ДАННЫЕ СОБРАНЫ ПО: {url}")
+                    print(
+                        f"\t[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][SUCCESS url id {url_index}][PAGE: {PREVIOUS_ACTIVE_PAGE}] ДАННЫЕ СОБРАНЫ ПО: {url}")
 
             except Exception as e:
                 self.ERRORS.setdefault('get_all_goods_from_page', {}).setdefault(f"{url}", e.args)
                 self.ERRORS_URLS.add(url)
-                print(f"\t[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][ERROR url id {url_index}] ОШИБКА! {e.args}")  # TODO ERRORS
+                print(
+                    f"\t[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][ERROR url id {url_index}] ОШИБКА! {e.args}")  # TODO ERRORS
 
     async def get_tasks_car_goods(self, chunk_data: list | tuple) -> None:
         """
@@ -575,7 +574,8 @@ class ParserBamperBy:
 
             if not chunk_id % 10:
                 end_chunk = time.monotonic()
-                self._write_to_json(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{self.OBJ_ID}", f'[chunk id {chunk_id}] all_goods_urls.json',
+                self._write_to_json(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{self.OBJ_ID}",
+                                    f'[chunk id {chunk_id}] all_goods_urls.json',
                                     self.ALL_GOODS_URLS)
                 self._write_to_file(
                     self.DEFAULT_URL_PATH,
@@ -591,7 +591,8 @@ class ParserBamperBy:
             print("____SUPER____", self.OBJ_ID)
 
             end_chunk = time.monotonic()
-            self._write_to_json(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{self.OBJ_ID}", f'[chunk id {chunk_id}] all_goods_urls.json',
+            self._write_to_json(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{self.OBJ_ID}",
+                                f'[chunk id {chunk_id}] all_goods_urls.json',
                                 self.ALL_GOODS_URLS)
             self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
                 f"\tВремя работы скрипта получение списка [последний chunk id {chunk_id}]({(chunk_id + 1) * 150}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS)}): {end_chunk - start_chunk} секунд.",),
@@ -732,7 +733,8 @@ class ParserBamperBy:
         """
         await self.get_delay(1, 3)
         self.URL_COUNTER += 1
-        print(f"[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
+        print(
+            f"[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
         try:
             async with session.get(url, headers=self._get_header()) as response:
                 soup = self.get_soup(await response.read())
@@ -741,11 +743,13 @@ class ParserBamperBy:
                 self.DATA_FOR_CSV.append(
                     self.get_data(soup, url, car_brand, car_model, group, chapter)
                 )
-                print(f"\t[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][SUCCESS url id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
+                print(
+                    f"\t[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][SUCCESS url id {url_index}] ДАННЫЕ СОБРАНЫ ПО: {url}")
         except Exception as e:
             self.ERRORS.setdefault('get_data_from_page', {}).setdefault(f"{url_index}. {url}", e.args)
             self.ERRORS_URLS.add(url)
-            print(f"\t[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][ERROR id {url_index}] ОШИБКА! {e.args}")
+            print(
+                f"\t[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][ERROR id {url_index}] ОШИБКА! {e.args}")
 
     async def get_tasks_car_items(self, chunk_data: list | tuple) -> None:
         """
@@ -786,7 +790,8 @@ class ParserBamperBy:
         list_of_files = os.listdir(f"{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{self.OBJ_ID}")
         for filename in list_of_files:
 
-            self.ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{self.OBJ_ID}/{filename}', isjson=True)
+            self.ALL_GOODS_URLS = self._read_file(f'{self.DEFAULT_URL_PATH_ALL_GOODS_URLS}/{self.OBJ_ID}/{filename}',
+                                                  isjson=True)
 
             start_chunk = time.monotonic()
             chunks = self.get_chunks(self.ALL_GOODS_URLS, 300)
@@ -799,7 +804,7 @@ class ParserBamperBy:
                 )
                 try:
                     self._write_to_json(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
-                                     f'ERRORS_data_items.json', self.ERRORS, isadd=True)
+                                        f'ERRORS_data_items.json', self.ERRORS, isadd=True)
                 except Exception as e:
                     print("____ERRRRRRORRR_____", e)
                 self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
@@ -807,8 +812,11 @@ class ParserBamperBy:
                                     workmode='a')
                 if not chunk_id % 10:
                     end_chunk = time.monotonic()
-                    self._write_to_csv(f"{self.DEFAULT_URL_PATH_CSV}/csv", f'[inst_id {self.OBJ_ID}][chunk_id {chunk_id}]_RESULT.csv', self.DATA_FOR_CSV)
-                    self._write_to_json(f"{self.DEFAULT_URL_PATH_CSV}/res_json", f'[inst_id {self.OBJ_ID}][chunk_id {chunk_id}]_all_data_items.json', self.DATA_FOR_CSV)
+                    self._write_to_csv(f"{self.DEFAULT_URL_PATH_CSV}/csv",
+                                       f'[inst_id {self.OBJ_ID}][chunk_id {chunk_id}]_RESULT.csv', self.DATA_FOR_CSV)
+                    self._write_to_json(f"{self.DEFAULT_URL_PATH_CSV}/res_json",
+                                        f'[inst_id {self.OBJ_ID}][chunk_id {chunk_id}]_all_data_items.json',
+                                        self.DATA_FOR_CSV)
                     self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
                         f"\tВремя работы скрипта получение данных по товарам [последний chunk id {chunk_id}]({(chunk_id + 1) * 300}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS) if chunk_id != 0 else (chunk_id + 1) * 300}): {end_chunk - start_chunk} секунд.",),
                                         workmode='a')
@@ -819,8 +827,11 @@ class ParserBamperBy:
             if self.DATA_FOR_CSV:
                 end_chunk = time.monotonic()
 
-                self._write_to_csv(f"{self.DEFAULT_URL_PATH_CSV}/csv", f'[inst_id {self.OBJ_ID}][chunk_id {chunk_id}]_RESULT.csv', self.DATA_FOR_CSV)
-                self._write_to_json(f"{self.DEFAULT_URL_PATH_CSV}/res_json", f'[inst_id {self.OBJ_ID}][chunk_id {chunk_id}]_all_data_items.json', self.DATA_FOR_CSV)
+                self._write_to_csv(f"{self.DEFAULT_URL_PATH_CSV}/csv",
+                                   f'[inst_id {self.OBJ_ID}][chunk_id {chunk_id}]_RESULT.csv', self.DATA_FOR_CSV)
+                self._write_to_json(f"{self.DEFAULT_URL_PATH_CSV}/res_json",
+                                    f'[inst_id {self.OBJ_ID}][chunk_id {chunk_id}]_all_data_items.json',
+                                    self.DATA_FOR_CSV)
                 self._write_to_file(self.DEFAULT_URL_PATH, 'timing.txt', (
                     f"\tВремя работы скрипта получение данных по товарам [последний chunk id {chunk_id}]({(chunk_id + 1) * 300}/{self._get_length_iterable(self.URLS_WITH_ATTRS_GROUPS) if chunk_id != 0 else (chunk_id + 1) * 300}): {end_chunk - start_chunk} секунд.",),
                                     workmode='a')
@@ -894,22 +905,23 @@ class MultiplyParser(ParserBamperBy):
         if self._check_dirs(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json", check_file=True):
             os.remove(f"{self.DEFAULT_URL_PATH}/urls_with_attrs_groups.json")
         ################################################
+        try:
+            self.run_attrs_groups_tasks()  # Наполняет type(self).URLS_WITH_ATTRS_GROUPS атрибут класса!
+        except Exception as e:
+            print(e)
 
-        self.run_attrs_groups_tasks()
-
-
-
-        if not self.URLS_WITH_ATTRS_GROUPS:
-            self.URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
-        chunks = self.get_chunks(self.URLS_WITH_ATTRS_GROUPS, len(self.URLS_WITH_ATTRS_GROUPS)//3) # TODO
+        if not type(self).URLS_WITH_ATTRS_GROUPS:
+            type(self).URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
+        chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS,
+                                 len(type(self).URLS_WITH_ATTRS_GROUPS) // 3)  # TODO self.URLS_WITH_ATTRS_GROUPS to type(self).URLS_WITH_ATTRS_GROUPS
         for chunk in chunks:
             instance = obj()
-            instance.URLS_WITH_ATTRS_GROUPS = chunk
+            instance.URLS_WITH_ATTRS_GROUPS.extend(chunk)
             self.PARSER_INSTANCE.append(instance)
 
     async def get_tasks(self):
-        import nest_asyncio
-        nest_asyncio.apply()
+
+        # nest_asyncio.apply()
         for obj_id, obj in enumerate(self.PARSER_INSTANCE, 1):
 
             # Удаление файлов с результатами работы прошлых запусков.
@@ -930,19 +942,15 @@ class MultiplyParser(ParserBamperBy):
                 for file in files:
                     os.remove(f"{self.DEFAULT_URL_PATH_CSV}/res_json/{file}")
 
-
             ############################################################################
             self.TASKS.append(
                 asyncio.create_task(
-                    # obj.run_all_tasks(obj_id)
                     obj.run_all_tasks()
                 )
             )
-
         await asyncio.gather(*self.TASKS)
 
     def run_tasks(self):
-
         asyncio.run(self.get_tasks())
 
 
