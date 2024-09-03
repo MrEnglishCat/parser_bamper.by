@@ -392,7 +392,7 @@ class ParserBamperBy:
         Полчает на вход чанк(итерируемый объект) по его ссылкам формирует таски используя метод get_list_attr_groups_url
         """
         self.TASKS.clear()
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(), trust_env=True) as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(180), trust_env=True) as session:
             for url_index, car_data in enumerate(chunk_data, 1):
                 car_brand = car_data[0]
                 car_model = car_data[1]
@@ -435,7 +435,7 @@ class ParserBamperBy:
                                 self.ERRORS, isadd=True)
             self._write_to_file(f"{self.DEFAULT_URL_PATH_ERRORS}/{self._get_datetime(True)}",
                                 f'ERRORS_URLS_attrs_groups.txt', self.ERRORS_URLS, workmode='a')
-            self.URLS_WITH_ATTRS_GROUPS.clear()
+            type(self).URLS_WITH_ATTRS_GROUPS.clear()
             # if chunk_id == 0:  # TODO TEST ограничение на количество обрабатываемых чанков при получении ссылок на модели авто
             #     break
         self.ERRORS.clear()
@@ -518,7 +518,7 @@ class ParserBamperBy:
         """
         self.TASKS.clear()
         print(f'[{self.OBJ_ID}][INFO] Формирование задач для начала сбора url товаров...')
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(), trust_env=True) as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(180), trust_env=True) as session:
             for url_index, data in enumerate(chunk_data, 1):
                 car_brand = data[0]
                 car_model = data[1]
@@ -764,7 +764,7 @@ class ParserBamperBy:
         """
         self.TASKS.clear()
         print(f'[instance {self.OBJ_ID}][INFO] Формирование задач для начала сбора данных о товарах...')
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(), trust_env=True) as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(180), trust_env=True) as session:
             for url_index, data in enumerate(chunk_data, 1):
                 car_brand = data[0]
                 car_model = data[1]
@@ -916,7 +916,7 @@ class MultiplyParser(ParserBamperBy):
                                  len(type(self).URLS_WITH_ATTRS_GROUPS) // 3)  # TODO self.URLS_WITH_ATTRS_GROUPS to type(self).URLS_WITH_ATTRS_GROUPS
         for chunk in chunks:
             instance = obj()
-            instance.URLS_WITH_ATTRS_GROUPS.extend(chunk)
+            instance.URLS_WITH_ATTRS_GROUPS = chunk
             self.PARSER_INSTANCE.append(instance)
 
     async def get_tasks(self):
