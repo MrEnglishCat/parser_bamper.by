@@ -5,6 +5,8 @@ import os
 import sys
 import time
 import re
+# from lib2to3.btm_utils import reduce_tree
+
 import nest_asyncio
 
 import aiohttp
@@ -15,6 +17,7 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from datetime import datetime
 
+from test import cookies
 
 # Token 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
 # git clone https://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@github.com/MrEnglishCat/parser_bamper.by.git
@@ -41,6 +44,7 @@ class ParserBamperBy:
     DEFAULT_URL_PATH_ERRORS = f"data/urls/errors"
     DEFAULT_URL_PATH_CONTINUES = f"data/urls/continues"
     DEFAULT_TEST_URL_PATH = "data/test"  # TODO TEST каталог для тестовых файлов
+    COOKIES = None
 
     HEADERS = {
         'Accept': '*/*',
@@ -94,8 +98,43 @@ class ParserBamperBy:
     def _get_length_iterable(obj: list | tuple) -> int:
         return len(obj)
 
+    def _set_first_cookies(self, response):
+        """
+        Пока что нигде не используется
+        Args:
+            response:
+
+        Returns:
+
+        """
+        self.COOKIES = response.cookies
+
     @staticmethod
-    def _get_header() -> dict:
+    def _get_cookies(response: aiohttp.ClientResponse=None) -> dict:
+        """
+
+        Args:
+            response: aiohttp.ClientRespons. Default is None
+
+        Returns: dict | cookies
+
+        """
+        cookies = {
+            '_ym_uid': '1717400752994434456',
+            '_ym_d': '1717400752',
+            '_gid': 'GA1.2.855576063.1725315174',
+            'BITRIX_SM_aLastSearch': 'a%3A10%3A%7Bi%3A0%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A1%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A43%3A%22%D0%97%D0%B0%D0%BF%D1%87%D0%B0%D1%81%D1%82%D0%B8%20%20Aito%20M5%2C%202022-2024%20%D0%B3.%D0%B2.%22%3Bs%3A3%3A%22url%22%3Bs%3A41%3A%22%2Fzchbu%2Fmarka_aito%2Fmodel_m5%2Fgod_2022-2024%2F%22%3B%7Di%3A2%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A3%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A43%3A%22%D0%97%D0%B0%D0%BF%D1%87%D0%B0%D1%81%D1%82%D0%B8%20%20Aito%20M5%2C%202022-2024%20%D0%B3.%D0%B2.%22%3Bs%3A3%3A%22url%22%3Bs%3A41%3A%22%2Fzchbu%2Fmarka_aito%2Fmodel_m5%2Fgod_2022-2024%2F%22%3B%7Di%3A4%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A5%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A28%3A%22CD-%D1%87%D0%B5%D0%B9%D0%BD%D0%B4%D0%B6%D0%B5%D1%80%20Acura%20CL%22%3Bs%3A3%3A%22url%22%3Bs%3A51%3A%22%2Fzchbu%2Fzapchast_cd-cheyndzher%2Fmarka_acura%2Fmodel_cl%2F%22%3B%7Di%3A6%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A7%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A28%3A%22CD-%D1%87%D0%B5%D0%B9%D0%BD%D0%B4%D0%B6%D0%B5%D1%80%20Acura%20CL%22%3Bs%3A3%3A%22url%22%3Bs%3A51%3A%22%2Fzchbu%2Fzapchast_cd-cheyndzher%2Fmarka_acura%2Fmodel_cl%2F%22%3B%7Di%3A8%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A9%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A28%3A%22CD-%D1%87%D0%B5%D0%B9%D0%BD%D0%B4%D0%B6%D0%B5%D1%80%20Acura%20CL%22%3Bs%3A3%3A%22url%22%3Bs%3A51%3A%22%2Fzchbu%2Fzapchast_cd-cheyndzher%2Fmarka_acura%2Fmodel_cl%2F%22%3B%7D%7D',
+            '_ga': 'GA1.2.129790464.1717101810',
+            '_ga_6M4HY0QKW3': 'GS1.1.1725465245.109.1.1725465590.0.0.0',
+            'PHPSESSID': 'mvgtfst3aash4s33gdc2pt4gtf',
+        }
+        if response is None:
+            return cookies
+        return response.cookies
+
+
+    @staticmethod
+    def _get_header(response=None) -> dict:
         """
         Используется для рандомизации headers в запросах
 
@@ -107,7 +146,8 @@ class ParserBamperBy:
             'accept-language': 'ru,en;q=0.9',
             'cache-control': 'max-age=0',
             # TODO подумать как подгружать куки из приходящих ответов на запросы
-            'cookie': 'store.test; videoblog_viewed=%5B%22623Ub5kg_co%22%5D; _ym_uid=1719992655224117596; _ym_d=1719992655; BX_USER_ID=3a669f33c2a47f32e32882596a3c4475; FCCDCF=%5Bnull%2Cnull%2Cnull%2C%5B%22CQDmW4AQDmW4AEsACBRUBCFoAP_gAEPgAATAKLpB_C7FbSlCwH53aPsEcAhPRtAwxoQhAAbBEuIFQAKQYBQCgkExNAzgFCACAAAAOCbBIQMECAAACVAgYAAQIAAMIAQQAAIIJAAAgAEAAEAYCAACAAAAEAIIAACBEAAAmBgAAIIACBAAhABACACACAKgAAABAgCAAAAACAEAAAAAAAgAkQgACAAAAAAAAAAIAAAAAAAAABAAAAAAAAAAAAgAAAAIJXJB_C7FbSlCyHhXYPsEMAhfRtAQxoQhAAbBImIFQAKQYAQCkkEzJEigECQAAAAAICRBIAEIAAgACFAhQAAQIBAMAAQQAAoIIAAAgCEAAEAQAAACAAAAEAIIAAAAEAAAiQhAAIICCBAAAAAAKACECACAAAAAAgAAAgAACAEAACAAgAAAkAgACAAAAAAAAAAIAAAAAAAAABAA%22%2C%222~43.55.57.70.89.93.108.122.124.144.149.196.230.236.259.266.286.311.313.322.323.358.370.385.413.415.424.436.445.449.486.494.495.540.560.574.587.591.609.821.827.864.899.931.938.979.981.1029.1033.1048.1051.1067.1092.1095.1097.1099.1126.1152.1188.1205.1225.1226.1227.1230.1276.1290.1301.1329.1365.1375.1415.1421.1423.1440.1449.1512.1514.1516.1542.1570.1577.1583.1598.1616.1651.1678.1697.1716.1720.1725.1735.1753.1765.1782.1800.1832.1845.1870.1878.1889.1898.1911.1917.1928.1958.1964.1969.1985.2010.2056.2072.2074.2135.2137.2166.2186.2222.2225.2253.2279.2292.2299.2312.2328.2331.2334.2336.2343.2354.2357.2373.2377.2387.2403.2405.2406.2407.2415.2427.2440.2461.2472.2501.2506.2517.2526.2527.2552.2567.2568.2571.2572.2575.2577.2584.2589.2604.2609.2614.2621.2624.2629.2645.2646.2657.2658.2660.2661.2669.2677.2767.2768.2792.2801.2817.2822.2827.2832.2834.2838.2849.2876.2878.2883.2887.2891.2893.2898.2900.2901.2920.2923.2931.2947.2965.2970.2973.2975.2979.2983.2987.2995.2999.3002.3008.3009.3018.3025.3043.3052.3055.3059.3075.3094.3099.3107.3119.3136.3155.3198.3210.3217.3225.3227.3228.3231.3234.3236.3237.3250.3253.3257.3270.3288.3289.3300.3316.3330.3831.9731.10631.11531.14237.14332.21233.23031.28031.29631.32531~dv.%22%2C%221F8E5EEE-DA1A-4D30-B5E2-CC9C10740E89%22%5D%5D; BITRIX_SM_KOMPLEKTY_SHOW1TIME=Y; store.test; _gid=GA1.2.1699092652.1725251911; __gads=ID=efda6d337bd78af5:T=1722334307:RT=1725284942:S=ALNI_MaVAsjAXscWPkZxUmRaX7gYYA4CAA; __gpi=UID=00000e818f569ac6:T=1722334307:RT=1725284942:S=ALNI_MYHZe1X9YWR21PomeZ19iIaP78hMQ; _ym_isad=2; store.test=; __eoi=ID=55f2cea5f4c2be64:T=1722334307:RT=1725456566:S=AA-AfjY7j0w_6G21IdulZQQ3E9ml; cf_clearance=hUgHj9luqg4i7Y6pU.v8JklWboK0Pb.4I0PrMCA1mT4-1725469585-1.2.1.1-Irgo.Hd_QNUEXJqlwVsik8bawGwTyRJ7KmQngsEWUslan4Hw02aDqsZUuTd3cAnNe6V9NIVuWUaNC0PxMZTzTGJmvk.UpbjAj1n7Bqr.78kRSi7Ab_WOgL.IQHfM2TqoV2xS1u4GZMSD1aeQnJAQ7xXvO8sN3II_88rp0anmoR6U5kG049p63QMKgS6yqmQmCnCeMNsYke4TX81SYkIvcJrEJ2hhxdy050a7sjKRGZEgbn.DYCe6OduKs4fHHLUM0SU75W0i6rmSF0JSXajNXcIeFWfehrcd4J3rWn187.1yHU.LCyMeh0PdMpqIfUwJ6hHOC1aFJynoU86o4Fm5SwCBUkOCsf9jGfVILgPIbmHjNwFzA90cztfn5JFIZDJ_QOFpRzWXajR69jTDVV.dSyJmYzN3nl24IOJzHoWTUv71fwCcNDJ0GQbT3PKCmD_N6TybywHeqcUF8pni4Iymgw; BITRIX_SM_aLastSearch=a%3A10%3A%7Bi%3A0%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A1%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A28%3A%22CD-%D1%87%D0%B5%D0%B9%D0%BD%D0%B4%D0%B6%D0%B5%D1%80%20Acura%20CL%22%3Bs%3A3%3A%22url%22%3Bs%3A51%3A%22%2Fzchbu%2Fzapchast_cd-cheyndzher%2Fmarka_acura%2Fmodel_cl%2F%22%3B%7Di%3A2%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A3%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A28%3A%22CD-%D1%87%D0%B5%D0%B9%D0%BD%D0%B4%D0%B6%D0%B5%D1%80%20Acura%20CL%22%3Bs%3A3%3A%22url%22%3Bs%3A51%3A%22%2Fzchbu%2Fzapchast_cd-cheyndzher%2Fmarka_acura%2Fmodel_cl%2F%22%3B%7Di%3A4%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A5%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A32%3A%22%D0%93%D0%B8%D1%80%D0%BE%D1%81%D0%BA%D0%BE%D0%BF%20Mitsubishi%20L200%22%3Bs%3A3%3A%22url%22%3Bs%3A53%3A%22%2Fzchbu%2Fzapchast_giroskop%2Fmarka_mitsubishi%2Fmodel_l200%2F%22%3B%7Di%3A6%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A33%3A%22%D0%92%D0%B0%D0%BA%D1%83%D1%83%D0%BC%D0%BD%D1%8B%D0%B9%20%D1%80%D0%B5%D1%81%D0%B8%D0%B2%D0%B5%D1%80%22%3Bs%3A3%3A%22url%22%3Bs%3A34%3A%22%2Fzchbu%2Fzapchast_vakuumnyy-resiver%2F%22%3B%7Di%3A7%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A58%3A%22%D0%92%D0%B0%D0%BA%D1%83%D1%83%D0%BC%D0%BD%D1%8B%D0%B9%20%D0%BC%D0%BE%D0%B4%D1%83%D0%BB%D1%8F%D1%82%D0%BE%D1%80%20%D0%90%D0%9A%D0%9F%D0%9F%20Fiat%20Ducato%22%3Bs%3A3%3A%22url%22%3Bs%3A66%3A%22%2Fzchbu%2Fzapchast_vakuumnyy-modulyator-akpp%2Fmarka_fiat%2Fmodel_ducato%2F%22%3B%7Di%3A8%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A65%3A%22%D0%91%D0%BB%D0%BE%D0%BA%20%D1%83%D0%BF%D1%80%D0%B0%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F%20%D0%B0%D0%BA%D0%BA%D1%83%D0%BC%D1%83%D0%BB%D1%8F%D1%82%D0%BE%D1%80%D0%BE%D0%BC%20%28%D0%90%D0%9A%D0%91%29%22%3Bs%3A3%3A%22url%22%3Bs%3A52%3A%22%2Fzchbu%2Fzapchast_blok-upravleniya-akkumulyatorom-akb%2F%22%3B%7Di%3A9%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A217%3A%22%D0%91%D0%BB%D0%BE%D0%BA%20%D1%81%D0%BE%D0%B3%D0%BB%D0%B0%D1%81%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F%20%D1%84%D0%B0%D1%80%D0%BA%D0%BE%D0%BF%D0%B0%2C%20%D0%BC%D0%BE%D0%B4%D1%83%D0%BB%D1%8C%20%D0%BF%D0%BE%D0%B4%D0%BA%D0%BB%D1%8E%D1%87%D0%B5%D0%BD%D0%B8%D1%8F%20%D0%BF%D1%80%D0%B8%D1%86%D0%B5%D0%BF%D0%B0%2C%20%D0%B1%D0%BB%D0%BE%D0%BA%20%D1%83%D0%BF%D1%80%D0%B0%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F%20%D0%B1%D1%83%D0%BA%D1%81%D0%B8%D1%80%D0%BE%D0%B2%D0%BE%D1%87%D0%BD%D0%BE%D0%B3%D0%BE%20%D0%BA%D1%80%D1%8E%D0%BA%D0%B0%2C%20%D0%B1%D0%BB%D0%BE%D0%BA%20%D1%83%D0%BF%D1%80%D0%B0%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F%20%D1%84%D0%B0%D1%80%D0%BA%D0%BE%D0%BF%D0%B0%22%3Bs%3A3%3A%22url%22%3Bs%3A43%3A%22%2Fzchbu%2Fzapchast_blok-soglasovaniya-farkopa%2F%22%3B%7D%7D; PHPSESSID=9u0ar6t2i4jok1non4t8bvqtvi; _ga_6M4HY0QKW3=GS1.1.1725467731.27.1.1725469827.0.0.0; _ga=GA1.2.46988855.1719992655; _gat_UA-31751536-4=1; FCNEC=%5B%5B%22AKsRol9fxfJkR_bKhlTvhiBnVqmCziiQYZ1PHysnYF_FIjp-6pahOzFHSpggGhboR7h71vHH3rF2U6a4X9eKnNmkha6c4Bg9AUIXhO0zk6qvJdcsYoHUtHB4r-8vqxTYffmi5S48ZWgoy5Y7bpM03kOljg8JFv6VGg%3D%3D%22%5D%5D',
+            # 'cookie': 'store.test; videoblog_viewed=%5B%22623Ub5kg_co%22%5D; _ym_uid=1719992655224117596; _ym_d=1719992655; BX_USER_ID=3a669f33c2a47f32e32882596a3c4475; FCCDCF=%5Bnull%2Cnull%2Cnull%2C%5B%22CQDmW4AQDmW4AEsACBRUBCFoAP_gAEPgAATAKLpB_C7FbSlCwH53aPsEcAhPRtAwxoQhAAbBEuIFQAKQYBQCgkExNAzgFCACAAAAOCbBIQMECAAACVAgYAAQIAAMIAQQAAIIJAAAgAEAAEAYCAACAAAAEAIIAACBEAAAmBgAAIIACBAAhABACACACAKgAAABAgCAAAAACAEAAAAAAAgAkQgACAAAAAAAAAAIAAAAAAAAABAAAAAAAAAAAAgAAAAIJXJB_C7FbSlCyHhXYPsEMAhfRtAQxoQhAAbBImIFQAKQYAQCkkEzJEigECQAAAAAICRBIAEIAAgACFAhQAAQIBAMAAQQAAoIIAAAgCEAAEAQAAACAAAAEAIIAAAAEAAAiQhAAIICCBAAAAAAKACECACAAAAAAgAAAgAACAEAACAAgAAAkAgACAAAAAAAAAAIAAAAAAAAABAA%22%2C%222~43.55.57.70.89.93.108.122.124.144.149.196.230.236.259.266.286.311.313.322.323.358.370.385.413.415.424.436.445.449.486.494.495.540.560.574.587.591.609.821.827.864.899.931.938.979.981.1029.1033.1048.1051.1067.1092.1095.1097.1099.1126.1152.1188.1205.1225.1226.1227.1230.1276.1290.1301.1329.1365.1375.1415.1421.1423.1440.1449.1512.1514.1516.1542.1570.1577.1583.1598.1616.1651.1678.1697.1716.1720.1725.1735.1753.1765.1782.1800.1832.1845.1870.1878.1889.1898.1911.1917.1928.1958.1964.1969.1985.2010.2056.2072.2074.2135.2137.2166.2186.2222.2225.2253.2279.2292.2299.2312.2328.2331.2334.2336.2343.2354.2357.2373.2377.2387.2403.2405.2406.2407.2415.2427.2440.2461.2472.2501.2506.2517.2526.2527.2552.2567.2568.2571.2572.2575.2577.2584.2589.2604.2609.2614.2621.2624.2629.2645.2646.2657.2658.2660.2661.2669.2677.2767.2768.2792.2801.2817.2822.2827.2832.2834.2838.2849.2876.2878.2883.2887.2891.2893.2898.2900.2901.2920.2923.2931.2947.2965.2970.2973.2975.2979.2983.2987.2995.2999.3002.3008.3009.3018.3025.3043.3052.3055.3059.3075.3094.3099.3107.3119.3136.3155.3198.3210.3217.3225.3227.3228.3231.3234.3236.3237.3250.3253.3257.3270.3288.3289.3300.3316.3330.3831.9731.10631.11531.14237.14332.21233.23031.28031.29631.32531~dv.%22%2C%221F8E5EEE-DA1A-4D30-B5E2-CC9C10740E89%22%5D%5D; BITRIX_SM_KOMPLEKTY_SHOW1TIME=Y; store.test; _gid=GA1.2.1699092652.1725251911; __gads=ID=efda6d337bd78af5:T=1722334307:RT=1725284942:S=ALNI_MaVAsjAXscWPkZxUmRaX7gYYA4CAA; __gpi=UID=00000e818f569ac6:T=1722334307:RT=1725284942:S=ALNI_MYHZe1X9YWR21PomeZ19iIaP78hMQ; _ym_isad=2; store.test=; __eoi=ID=55f2cea5f4c2be64:T=1722334307:RT=1725456566:S=AA-AfjY7j0w_6G21IdulZQQ3E9ml; cf_clearance=hUgHj9luqg4i7Y6pU.v8JklWboK0Pb.4I0PrMCA1mT4-1725469585-1.2.1.1-Irgo.Hd_QNUEXJqlwVsik8bawGwTyRJ7KmQngsEWUslan4Hw02aDqsZUuTd3cAnNe6V9NIVuWUaNC0PxMZTzTGJmvk.UpbjAj1n7Bqr.78kRSi7Ab_WOgL.IQHfM2TqoV2xS1u4GZMSD1aeQnJAQ7xXvO8sN3II_88rp0anmoR6U5kG049p63QMKgS6yqmQmCnCeMNsYke4TX81SYkIvcJrEJ2hhxdy050a7sjKRGZEgbn.DYCe6OduKs4fHHLUM0SU75W0i6rmSF0JSXajNXcIeFWfehrcd4J3rWn187.1yHU.LCyMeh0PdMpqIfUwJ6hHOC1aFJynoU86o4Fm5SwCBUkOCsf9jGfVILgPIbmHjNwFzA90cztfn5JFIZDJ_QOFpRzWXajR69jTDVV.dSyJmYzN3nl24IOJzHoWTUv71fwCcNDJ0GQbT3PKCmD_N6TybywHeqcUF8pni4Iymgw; BITRIX_SM_aLastSearch=a%3A10%3A%7Bi%3A0%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A1%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A28%3A%22CD-%D1%87%D0%B5%D0%B9%D0%BD%D0%B4%D0%B6%D0%B5%D1%80%20Acura%20CL%22%3Bs%3A3%3A%22url%22%3Bs%3A51%3A%22%2Fzchbu%2Fzapchast_cd-cheyndzher%2Fmarka_acura%2Fmodel_cl%2F%22%3B%7Di%3A2%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A3%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A28%3A%22CD-%D1%87%D0%B5%D0%B9%D0%BD%D0%B4%D0%B6%D0%B5%D1%80%20Acura%20CL%22%3Bs%3A3%3A%22url%22%3Bs%3A51%3A%22%2Fzchbu%2Fzapchast_cd-cheyndzher%2Fmarka_acura%2Fmodel_cl%2F%22%3B%7Di%3A4%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3BN%3Bs%3A3%3A%22url%22%3Bs%3A76%3A%22%2Fzchbu%2Flocal%2Ftemplates%2Fbsclassified%2Fassets%2Fplugins%2Fswipperswiper.min.js.map%2F%22%3B%7Di%3A5%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A32%3A%22%D0%93%D0%B8%D1%80%D0%BE%D1%81%D0%BA%D0%BE%D0%BF%20Mitsubishi%20L200%22%3Bs%3A3%3A%22url%22%3Bs%3A53%3A%22%2Fzchbu%2Fzapchast_giroskop%2Fmarka_mitsubishi%2Fmodel_l200%2F%22%3B%7Di%3A6%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A33%3A%22%D0%92%D0%B0%D0%BA%D1%83%D1%83%D0%BC%D0%BD%D1%8B%D0%B9%20%D1%80%D0%B5%D1%81%D0%B8%D0%B2%D0%B5%D1%80%22%3Bs%3A3%3A%22url%22%3Bs%3A34%3A%22%2Fzchbu%2Fzapchast_vakuumnyy-resiver%2F%22%3B%7Di%3A7%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A58%3A%22%D0%92%D0%B0%D0%BA%D1%83%D1%83%D0%BC%D0%BD%D1%8B%D0%B9%20%D0%BC%D0%BE%D0%B4%D1%83%D0%BB%D1%8F%D1%82%D0%BE%D1%80%20%D0%90%D0%9A%D0%9F%D0%9F%20Fiat%20Ducato%22%3Bs%3A3%3A%22url%22%3Bs%3A66%3A%22%2Fzchbu%2Fzapchast_vakuumnyy-modulyator-akpp%2Fmarka_fiat%2Fmodel_ducato%2F%22%3B%7Di%3A8%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A65%3A%22%D0%91%D0%BB%D0%BE%D0%BA%20%D1%83%D0%BF%D1%80%D0%B0%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F%20%D0%B0%D0%BA%D0%BA%D1%83%D0%BC%D1%83%D0%BB%D1%8F%D1%82%D0%BE%D1%80%D0%BE%D0%BC%20%28%D0%90%D0%9A%D0%91%29%22%3Bs%3A3%3A%22url%22%3Bs%3A52%3A%22%2Fzchbu%2Fzapchast_blok-upravleniya-akkumulyatorom-akb%2F%22%3B%7Di%3A9%3Ba%3A2%3A%7Bs%3A5%3A%22title%22%3Bs%3A217%3A%22%D0%91%D0%BB%D0%BE%D0%BA%20%D1%81%D0%BE%D0%B3%D0%BB%D0%B0%D1%81%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F%20%D1%84%D0%B0%D1%80%D0%BA%D0%BE%D0%BF%D0%B0%2C%20%D0%BC%D0%BE%D0%B4%D1%83%D0%BB%D1%8C%20%D0%BF%D0%BE%D0%B4%D0%BA%D0%BB%D1%8E%D1%87%D0%B5%D0%BD%D0%B8%D1%8F%20%D0%BF%D1%80%D0%B8%D1%86%D0%B5%D0%BF%D0%B0%2C%20%D0%B1%D0%BB%D0%BE%D0%BA%20%D1%83%D0%BF%D1%80%D0%B0%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F%20%D0%B1%D1%83%D0%BA%D1%81%D0%B8%D1%80%D0%BE%D0%B2%D0%BE%D1%87%D0%BD%D0%BE%D0%B3%D0%BE%20%D0%BA%D1%80%D1%8E%D0%BA%D0%B0%2C%20%D0%B1%D0%BB%D0%BE%D0%BA%20%D1%83%D0%BF%D1%80%D0%B0%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F%20%D1%84%D0%B0%D1%80%D0%BA%D0%BE%D0%BF%D0%B0%22%3Bs%3A3%3A%22url%22%3Bs%3A43%3A%22%2Fzchbu%2Fzapchast_blok-soglasovaniya-farkopa%2F%22%3B%7D%7D; PHPSESSID=9u0ar6t2i4jok1non4t8bvqtvi; _ga_6M4HY0QKW3=GS1.1.1725467731.27.1.1725469827.0.0.0; _ga=GA1.2.46988855.1719992655; _gat_UA-31751536-4=1; FCNEC=%5B%5B%22AKsRol9fxfJkR_bKhlTvhiBnVqmCziiQYZ1PHysnYF_FIjp-6pahOzFHSpggGhboR7h71vHH3rF2U6a4X9eKnNmkha6c4Bg9AUIXhO0zk6qvJdcsYoHUtHB4r-8vqxTYffmi5S48ZWgoy5Y7bpM03kOljg8JFv6VGg%3D%3D%22%5D%5D',
+            # 'cookie': __class__._get_cookies(),
             'priority': 'u=0, i',
             # 'referer': 'https://bamper.by/zchbu/zapchast_cd-cheyndzher/marka_acura/model_cl/',  # TODO рассмотреть возможность передавать сюда ссылку.
             'sec-ch-ua': '"Not/A)Brand";v="8", "Chromium";v="126", "YaBrowser";v="24.7", "Yowser";v="2.5"',
@@ -309,7 +349,7 @@ class ParserBamperBy:
         result = []
         car_brand = ''
         pattern_car_model = fr"(?<={car_brand}-).+"
-        response = requests.get(url, headers=self._get_header()).text
+        response = requests.get(url, headers=self._get_header(), cookies=self._get_cookies()).text
         soup = BeautifulSoup(response, 'html.parser')
         # list_of_data_to_be_processed = soup.find('div', class_='inner-box').find_all('div', class_='col-md-12')
 
@@ -321,10 +361,10 @@ class ParserBamperBy:
             self.ERRORS_URLS.add(url)
             print(f"\t[ERROR  {url}] ОШИБКА! {e}")
             # TODO принты ниже удалить
-            print('=' * 100)
-            print(soup)
-            print('=' * 100)
-
+            # print('=' * 100)
+            # print(soup)
+            # print('=' * 100)
+            #
             list_of_data_to_be_processed = []
 
         for row in list_of_data_to_be_processed:
@@ -398,7 +438,7 @@ class ParserBamperBy:
         """
         self.URL_COUNTER += 1
         print(f"[{self.URL_COUNTER}][INFO id {url_index}] Сбор данных по {url}")
-        async with session.get(url, headers=self._get_header()) as response:
+        async with session.get(url, headers=self._get_header(), cookies=self._get_cookies()) as response:
             soup = self.get_soup(await response.read())
             self.get_urls_from_soup(soup, car_brand, car_model)
 
@@ -500,7 +540,7 @@ class ParserBamperBy:
         while start:
             await self.get_delay(2, 3)
             try:
-                async with session.get(url, headers=self._get_header()) as response:
+                async with session.get(url, headers=self._get_header(), cookies=self._get_cookies()) as response:
                     soup = self.get_soup(await response.read())
                     if PREVIOUS_ACTIVE_PAGE == self._get_active_page(soup):
                         start = False
@@ -766,7 +806,7 @@ class ParserBamperBy:
         print(
             f"[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
         try:
-            async with session.get(url, headers=self._get_header()) as response:
+            async with session.get(url, headers=self._get_header(), cookies=self._get_cookies()) as response:
                 soup = self.get_soup(await response.read())
                 if (a := soup.find('div', class_='row block404')):
                     raise ValueError(f'Error 404 - {a.text}')
@@ -938,17 +978,21 @@ class MultiplyParser(ParserBamperBy):
         try:
             self.run_attrs_groups_tasks()  # Наполняет type(self).URLS_WITH_ATTRS_GROUPS атрибут класса!
         except Exception as e:
-            print(e)
+            print("ERRORS_line_965", e)
 
         if not type(self).URLS_WITH_ATTRS_GROUPS:
             type(self).URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
-        chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS,
-                                 len(type(self).URLS_WITH_ATTRS_GROUPS) // 3)  # TODO self.URLS_WITH_ATTRS_GROUPS to type(self).URLS_WITH_ATTRS_GROUPS
-        for chunk in chunks:
-            instance = obj()
-            instance.URLS_WITH_ATTRS_GROUPS = chunk
-            self.PARSER_INSTANCE.append(instance)
 
+        if type(self).URLS_WITH_ATTRS_GROUPS:
+            chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS,
+                                 len(type(self).URLS_WITH_ATTRS_GROUPS) // 3)  # TODO self.URLS_WITH_ATTRS_GROUPS to type(self).URLS_WITH_ATTRS_GROUPS
+
+            for chunk in chunks:
+                instance = obj()
+                instance.URLS_WITH_ATTRS_GROUPS = chunk
+                self.PARSER_INSTANCE.append(instance)
+        else:
+            raise ValueError("Файл 'data/urls/urls_with_attrs_groups.json' - не найден! \nСкрипт остановлен!")
     async def get_tasks(self):
 
         # nest_asyncio.apply()
@@ -989,5 +1033,9 @@ if __name__ == '__main__':
     #     которое не обработано
     # TODO continue в каталоге continues после того как файл будет пустым рассмотреть необходимость его удаления
     parser = MultiplyParser()
-    parser.create_parser_instance(ParserBamperBy)
+    try:
+        parser.create_parser_instance(ParserBamperBy)
+    except Exception as e:
+        # print(e)
+        print()
     parser.run_tasks()
