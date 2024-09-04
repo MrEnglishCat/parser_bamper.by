@@ -17,7 +17,6 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from datetime import datetime
 
-from test import cookies
 
 # Token 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
 # git clone https://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@github.com/MrEnglishCat/parser_bamper.by.git
