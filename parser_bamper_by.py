@@ -43,7 +43,8 @@ class ParserBamperBy:
     DEFAULT_TEST_URL_PATH = "data/test"  # TODO TEST каталог для тестовых файлов
 
     HEADERS = {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept': '*/*',
+        # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'User-Agent': UserAgent().random,
     }
 
@@ -102,7 +103,8 @@ class ParserBamperBy:
         """
         return {
             # 'authority': 'bamper.by',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept': '*/*',
             'accept-language': 'ru,en-US;q=0.9,en;q=0.8',
             'User-Agent': UserAgent().random,
         }
