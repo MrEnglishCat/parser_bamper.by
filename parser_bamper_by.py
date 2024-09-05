@@ -5,10 +5,7 @@ import os
 import sys
 import time
 import re
-# from lib2to3.btm_utils import reduce_tree
-
 import nest_asyncio
-
 import aiohttp
 import requests
 from pprint import pprint
@@ -17,9 +14,10 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from datetime import datetime
 
-
 # Token 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
 # git clone https://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@github.com/MrEnglishCat/parser_bamper.by.git
+
+
 # sys.stdin.reconfigure(encoding='utf-8')  # если в терминале проблемы с кодировкой, то раскомитить 17 и 18 строчки, либо изменить кодировку в терминале
 # sys.stdout.reconfigure(encoding='utf-8')
 
@@ -109,7 +107,7 @@ class ParserBamperBy:
         self.COOKIES = response.cookies
 
     @staticmethod
-    def _get_cookies(response: aiohttp.ClientResponse=None) -> dict:
+    def _get_cookies(response: aiohttp.ClientResponse = None) -> dict:
         """
 
         Args:
@@ -130,7 +128,6 @@ class ParserBamperBy:
         if response is None:
             return cookies
         return response.cookies
-
 
     @staticmethod
     def _get_header(response=None) -> dict:
@@ -165,7 +162,7 @@ class ParserBamperBy:
             'upgrade-insecure-requests': '1',
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 YaBrowser/24.7.0.0 Safari/537.36',
         }
-        #TODO ниже комменты не удалять пока что. Почему-то сайт не выдает данные с UserAgent Возможно устарели данные в модуле UserAgent
+        # TODO ниже комменты не удалять пока что. Почему-то сайт не выдает данные с UserAgent Возможно устарели данные в модуле UserAgent
         # return {
         #     # 'authority': 'bamper.by',
         #     # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -348,7 +345,8 @@ class ParserBamperBy:
         result = []
         car_brand = ''
         pattern_car_model = fr"(?<={car_brand}-).+"
-        response = requests.get(url, headers=self._get_header(), cookies=self._get_cookies()).text
+        # response = requests.get(url, headers=self._get_header(), cookies=self._get_cookies()).text
+        response = requests.get(url, headers=self._get_header()).text
         soup = BeautifulSoup(response, 'html.parser')
         # list_of_data_to_be_processed = soup.find('div', class_='inner-box').find_all('div', class_='col-md-12')
 
@@ -437,7 +435,8 @@ class ParserBamperBy:
         """
         self.URL_COUNTER += 1
         print(f"[{self.URL_COUNTER}][INFO id {url_index}] Сбор данных по {url}")
-        async with session.get(url, headers=self._get_header(), cookies=self._get_cookies()) as response:
+        # async with session.get(url, headers=self._get_header(), cookies=self._get_cookies()) as response:
+        async with session.get(url, headers=self._get_header()) as response:
             soup = self.get_soup(await response.read())
             self.get_urls_from_soup(soup, car_brand, car_model)
 
@@ -539,7 +538,8 @@ class ParserBamperBy:
         while start:
             await self.get_delay(2, 3)
             try:
-                async with session.get(url, headers=self._get_header(), cookies=self._get_cookies()) as response:
+                # async with session.get(url, headers=self._get_header(), cookies=self._get_cookies()) as response:
+                async with session.get(url, headers=self._get_header()) as response:
                     soup = self.get_soup(await response.read())
                     if PREVIOUS_ACTIVE_PAGE == self._get_active_page(soup):
                         start = False
@@ -805,7 +805,8 @@ class ParserBamperBy:
         print(
             f"[INSTANCE id {self.OBJ_ID}][URL COUNTER #{self.URL_COUNTER}][ INFO id {url_index}] Сбор данных по {url}")
         try:
-            async with session.get(url, headers=self._get_header(), cookies=self._get_cookies()) as response:
+            # async with session.get(url, headers=self._get_header(), cookies=self._get_cookies()) as response:
+            async with session.get(url, headers=self._get_header()) as response:
                 soup = self.get_soup(await response.read())
                 if (a := soup.find('div', class_='row block404')):
                     raise ValueError(f'Error 404 - {a.text}')
@@ -978,13 +979,15 @@ class MultiplyParser(ParserBamperBy):
             self.run_attrs_groups_tasks()  # Наполняет type(self).URLS_WITH_ATTRS_GROUPS атрибут класса!
         except Exception as e:
             print("ERRORS_line_965", e)
+            raise
 
         if not type(self).URLS_WITH_ATTRS_GROUPS:
             type(self).URLS_WITH_ATTRS_GROUPS = self._read_file('data/urls/urls_with_attrs_groups.json', isjson=True)
 
         if type(self).URLS_WITH_ATTRS_GROUPS:
             chunks = self.get_chunks(type(self).URLS_WITH_ATTRS_GROUPS,
-                                 len(type(self).URLS_WITH_ATTRS_GROUPS) // 3)  # TODO self.URLS_WITH_ATTRS_GROUPS to type(self).URLS_WITH_ATTRS_GROUPS
+                                     len(type(
+                                         self).URLS_WITH_ATTRS_GROUPS) // 3)  # TODO self.URLS_WITH_ATTRS_GROUPS to type(self).URLS_WITH_ATTRS_GROUPS
 
             for chunk in chunks:
                 instance = obj()
@@ -992,6 +995,7 @@ class MultiplyParser(ParserBamperBy):
                 self.PARSER_INSTANCE.append(instance)
         else:
             raise ValueError("Файл 'data/urls/urls_with_attrs_groups.json' - не найден! \nСкрипт остановлен!")
+
     async def get_tasks(self):
 
         # nest_asyncio.apply()
